@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="login_template" inherit_id="web.login">
+        <xpath expr="//form" position="inside">
+            <div>
+                <label for="role">Select Role:</label>
+                <select name="role" id="role">
+                    <t t-foreach="roles" t-as="r">
+                        <option t-att-value="r"><t t-esc="r"/></option>
+                    </t>
+                </select>
+            </div>
+        </xpath>
+        <xpath expr="//form" position="attributes">
+            <attribute name="style">background-color:#34495e !important; font-family: Arial, sans-serif; color: white;</attribute>
+        </xpath>
+    </template>
+</odoo>
