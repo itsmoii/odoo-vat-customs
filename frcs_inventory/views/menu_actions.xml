@@ -1,0 +1,20 @@
+<odoo>
+  <!-- Put it under Inventory / Reporting; adjust parent if needed -->
+  <menuitem id="menu_frcs_inventory_root"
+            name="FRCS Inventory"
+            parent="stock.menu_stock_report"
+            sequence="95"/>
+
+  <record id="action_url_product_master_xlsx" model="ir.actions.act_url">
+    <field name="name">Download FRCS Product Master (XLSX)</field>
+    <field name="type">ir.actions.act_url</field>
+    <field name="url">/frcs_inventory/product_master_xlsx</field>
+    <field name="target">self</field>
+  </record>
+
+  <menuitem id="menu_frcs_product_master_xlsx"
+            name="Product Master (XLSX)"
+            parent="menu_frcs_inventory_root"
+            action="action_url_product_master_xlsx"
+            sequence="1"/>
+</odoo>

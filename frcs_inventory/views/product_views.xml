@@ -1,0 +1,72 @@
+<odoo>
+  <data>
+    <record id="view_product_template_form_frcs" model="ir.ui.view">
+      <field name="name">product.template.form.frcs.inventory</field>
+      <field name="model">product.template</field>
+      <field name="inherit_id" ref="product.product_template_only_form_view"/>
+      <field name="arch" type="xml">
+        <!-- Insert FRCS fields right after Internal Reference (default_code) for robustness -->
+        <xpath expr="//field[@name='default_code']" position="after">
+          <field name="frcs_gtin"/>
+          <field name="frcs_tax_label"/>
+        </xpath>
+      </field>
+    </record>
+
+    <!-- Add GTIN and FRCS label columns to product template tree view -->
+    <record id="view_product_template_tree_frcs" model="ir.ui.view">
+      <field name="name">product.template.tree.frcs.inventory</field>
+      <field name="model">product.template</field>
+      <field name="inherit_id" ref="product.product_template_tree_view"/>
+      <field name="arch" type="xml">
+        <xpath expr="//tree/field[@name='default_code']" position="after">
+          <field name="frcs_gtin"/>
+          <field name="frcs_tax_label"/>
+        </xpath>
+      </field>
+    </record>
+
+    <!-- Enhance search view: make GTIN searchable and add quick filters for FRCS label -->
+    <record id="view_product_template_search_frcs" model="ir.ui.view">
+      <field name="name">product.template.search.frcs.inventory</field>
+      <field name="model">product.template</field>
+      <field name="inherit_id" ref="product.product_template_search_view"/>
+      <field name="arch" type="xml">
+        <xpath expr="//search" position="inside">
+          <field name="frcs_gtin" string="GTIN"/>
+          <separator/>
+          <filter name="frcs_label_A" string="FRCS A" domain="[('frcs_tax_label', '=', 'A')]"/>
+          <filter name="frcs_label_E" string="FRCS E" domain="[('frcs_tax_label', '=', 'E')]"/>
+          <filter name="frcs_label_F" string="FRCS F" domain="[('frcs_tax_label', '=', 'F')]"/>
+          <filter name="frcs_label_P" string="FRCS P" domain="[('frcs_tax_label', '=', 'P')]"/>
+          <separator/>
+          <filter name="frcs_missing_gtin" string="Missing GTIN" domain="['|', ('frcs_gtin','=',False), ('frcs_gtin','=', '')]"/>
+          <filter name="frcs_missing_label" string="Missing FRCS Label" domain="[('frcs_tax_label','=',False)]"/>
+          <separator/>
+          <filter name="group_frcs_label" string="Group by FRCS Label" context="{'group_by': 'frcs_tax_label'}"/>
+        </xpath>
+      </field>
+    </record>
+
+    <!-- Kanban: expose fields and show FRCS info on the card -->
+    <record id="view_product_template_kanban_frcs" model="ir.ui.view">
+      <field name="name">product.template.kanban.frcs.inventory</field>
+      <field name="model">product.template</field>
+      <field name="inherit_id" ref="product.product_template_kanban_view"/>
+      <field name="arch" type="xml">
+        <!-- Make GTIN/FRCS available in the kanban record -->
+        <xpath expr="//kanban" position="inside">
+          <field name="frcs_gtin"/>
+          <field name="frcs_tax_label"/>
+        </xpath>
+        <!-- Add a small muted line under the header info -->
+        <xpath expr="//kanban/templates/t[@t-name='card']/main/div[contains(@class,'mb-1')]" position="after">
+          <div class="text-muted small">
+            <t t-if="record.frcs_gtin.value">GTIN: <field name="frcs_gtin"/></t>
+            <t t-if="record.frcs_tax_label.value"><span class="ms-2">FRCS: <field name="frcs_tax_label"/></span></t>
+          </div>
+        </xpath>
+      </field>
+    </record>
+  </data>
+</odoo>
