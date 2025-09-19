@@ -4,8 +4,9 @@
     "summary": "Inventory extensions for FRCS compliance (GTIN, tax label, groundwork)",
     "author": "USP Team 10",
     "license": "LGPL-3",
-    "depends": ["stock", "product"],  # base inventory & product models
+    "depends": ["stock", "product", "account"],  # needs account.tax
     "data": [
+        "data/taxes.xml",
         "views/product_views.xml",
         "report/product_master_report.xml",
         "views/menu_actions.xml",
@@ -13,4 +14,5 @@
     ],
     "installable": True,
     "application": False,
+    "post_init_hook": "post_init_hook",
 }

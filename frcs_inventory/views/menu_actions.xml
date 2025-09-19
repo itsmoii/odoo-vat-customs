@@ -2,7 +2,7 @@
   <!-- Put it under Inventory / Reporting; adjust parent if needed -->
   <menuitem id="menu_frcs_inventory_root"
             name="FRCS Inventory"
-            parent="stock.menu_stock_report"
+            parent="stock.menu_stock_root"
             sequence="95"/>
 
   <record id="action_url_product_master_xlsx" model="ir.actions.act_url">
