@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="custom_pos_templates" xml:space="preserve">
+  <t t-extend="point_of_sale.PaymentScreenValidate" owl="1">
+    <!-- SMALL layout -->
+    <t t-jquery="button.validation-button" t-operation="attributes">
+      <attribute name="class">btn-switchpane validation-button btn btn-success btn-lg flex-fill py-3 lh-lg</attribute>
+      <attribute name="id">taxcore_sign_element</attribute>
+      <attribute name="data-taxcore-vsdc-url">https://vsdc.sandbox.vms.frcs.org.fj/</attribute>
+      <attribute name="data-taxcore-input-id">taxcore_input</attribute>
+      <attribute name="data-taxcore-output-id">taxcore_output</attribute>
+      <attribute name="data-taxcore-invoice-request"></attribute>
+      <attribute name="data-taxcore-debug">true</attribute>
+      <attribute name="data-taxcore-signed-invoice-response"></attribute>
+    </t>
+
+    <!-- LARGE layout -->
+    <t t-jquery="button.button.next.validation" t-operation="attributes">
+      <!-- Important: keep 'validation' (not 'validate'), and no leading space -->
+      <attribute name="class">button next validation btn btn-success btn-lg w-50 py-3 lh-lg</attribute>
+    </t>
+
+    <!-- Text replacement -->
+    <t t-jquery="span.next_text" t-operation="replace">
+      <span class="next_text" style="color:red; font-size:30px;">Validate THIS</span>
+    </t>
+    <t t-jquery="button.validation-button span" t-operation="replace">
+      <span style="color:red; font-size:30px;">Validate THIS</span>
+    </t>
+  </t>
+</templates>
