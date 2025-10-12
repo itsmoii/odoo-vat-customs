@@ -4,7 +4,7 @@
     'category': 'Website',
     'summary': 'Custom login page with role selection',
     'description': 'Replaces default Odoo login page with role selection',
-    'depends': ['web','auth_signup'],
+    'depends': ['web', 'auth_signup', 'point_of_sale'],
     'data': [
         "views/login_template.xml",
         "views/res_config_settings_views.xml",
@@ -22,3 +22,4 @@
     'installable': True,
     'application': False,
 }
+
