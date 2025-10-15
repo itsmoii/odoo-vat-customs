@@ -1,0 +1,9 @@
+<odoo>
+<record id="seq_finance_transaction" model="ir.sequence">
+<field name="name">Finance Transaction</field>
+<field name="code">finance.transaction</field>
+<field name="prefix">FTX</field>
+<field name="padding">5</field>
+<field name="company_id" eval="False"/>
+</record>
+</odoo>

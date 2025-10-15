@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+  <!-- Rename the destructive action to a clearer label -->
+  <t t-extend="point_of_sale.ControlButtons">
+    <t t-jquery="button:contains('Cancel Order')" t-operation="replace">
+      <button class="btn btn-danger btn-lg py-5" t-on-click="() => this.pos.onDeleteOrder(this.pos.get_order())">
+        <i class="fa fa-trash me-1" role="img" aria-label="Clear Order" title="Clear Order" />
+        ❌ Clear Order
+      </button>
+    </t>
+  </t>
+</templates>
+

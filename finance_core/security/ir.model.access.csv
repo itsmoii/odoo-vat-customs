@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_finance_transaction,Finance Transaction Access,finance_core.model_finance_transaction,base.group_user,1,1,1,1
+access_finance_report,Finance Report Access,finance_core.model_finance_report,base.group_user,1,1,1,1
+access_finance_dashboard,Finance Dashboard Access,finance_core.model_finance_dashboard,base.group_user,1,0,1,0
+access_finance_sales_details,Finance Sales Details Access,finance_core.model_finance_sales_details,base.group_user,1,0,1,0

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+  <!-- Brand the receipt header -->
+  <t t-extend="point_of_sale.ReceiptHeader">
+    <t t-jquery=".pos-receipt-contact" t-operation="replace">
+      <div class="pos-receipt-contact text-center">
+        <h2 class="mb-1">Super Mini Supermarket</h2>
+        <div t-if="props.data.company.vat">VAT: <t t-esc="props.data.company.vat"/></div>
+        <div t-if="props.data.company.phone">Tel: <t t-esc="props.data.company.phone"/></div>
+        <div t-if="props.data.company.email"><t t-esc="props.data.company.email"/></div>
+        <div t-if="props.data.company.website"><t t-esc="props.data.company.website"/></div>
+        <div class="mt-1" t-if="props.data.cashier">Cashier: <t t-esc="props.data.cashier"/></div>
+      </div>
+    </t>
+  </t>
+
+  <!-- Add a prominent Paid: Cash note under totals -->
+  <t t-extend="point_of_sale.OrderReceipt">
+    <t t-jquery=".before-footer" t-operation="before">
+      <div class="text-center mt-2">
+        <t t-if="props.data.paymentlines and props.data.paymentlines.length === 1 and (props.data.paymentlines[0].name || '').toLowerCase().includes('cash')">
+          <b>Paid: Cash</b>
+        </t>
+      </div>
+    </t>
+  </t>
+
+</templates>
+

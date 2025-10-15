@@ -1,5 +1,4 @@
 <odoo>
-  <data>
     <!-- explicit list view definition -->
 <!--
     <record model="ir.ui.view" id="frcs_inventory.list">
@@ -56,5 +55,4 @@
     <menuitem name="Server to list" id="frcs_inventory" parent="frcs_inventory.menu_2"
               action="frcs_inventory.action_server"/>
 -->
-  </data>
 </odoo>

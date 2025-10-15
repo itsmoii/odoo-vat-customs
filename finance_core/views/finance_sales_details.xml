@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Search view for Sales Details (POS Orders) -->
+    <record id="view_finance_sales_order_search" model="ir.ui.view">
+        <field name="name">finance.sales.pos.order.search</field>
+        <field name="model">pos.order</field>
+        <field name="arch" type="xml">
+            <search string="Sales Details">
+                <field name="name"/>
+                <field name="session_id"/>
+                <field name="partner_id"/>
+                <field name="user_id"/>
+                <field name="config_id"/>
+                <field name="date_order"/>
+                <filter name="final_states" string="Finalized" domain="[('state','in',['paid','done','invoiced'])]"/>
+                <filter name="today_range" string="Today" domain="[('date_order','>=', context_today())]"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action to open Sales Details (generic) -->
+    <record id="action_finance_sales_details" model="ir.actions.act_window">
+        <field name="name">Sales Details</field>
+        <field name="res_model">pos.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="finance_core.view_finance_sales_order_search"/>
+        <field name="context">{"search_default_final_states": 1, "search_default_today_range": 1}</field>
+    </record>
+
+    <!-- Optional menu (you already have dashboard and daily sales) -->
+    <menuitem id="menu_finance_sales_details" name="Sales Details (List)" parent="finance_core.menu_finance_sales_root" action="action_finance_sales_details" sequence="4"/>
+</odoo>

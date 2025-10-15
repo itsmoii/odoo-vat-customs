@@ -17,3 +17,15 @@
 #         for record in self:
 #             record.value2 = float(record.value) / 100
 
+# -*- coding: utf-8 -*-
+from odoo import models, fields, api
+
+#class ProductTemplate(models.Model):
+ #   _inherit = 'product.template'
+
+  #  x_frcs_tax = fields.Many2one(
+   #     'account.tax',
+   #     string="FRCS Tax",
+   #     domain="[('type_tax_use', '=', 'sale')]",
+     #   help="Select the applicable FRCS VAT for this product."
+  #  )

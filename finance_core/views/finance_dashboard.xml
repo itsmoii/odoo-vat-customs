@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_finance_dashboard_form" model="ir.ui.view">
+        <field name="name">finance.dashboard.form</field>
+        <field name="model">finance.dashboard</field>
+        <field name="arch" type="xml">
+            <form string="Finance Dashboard" class="finance-dashboard">
+                <sheet>
+
+                    <div class="fd-header">
+                    <h1>Finance</h1>
+                    </div>
+
+                    <!-- Custom KPI tiles container (no oe_button_box) -->
+                    <div class="fd-kpis">
+                        <button name="action_open_today_sales" type="object" class="kpi-tile">
+                            <span class="kpi-value"><field name="sales_today"/></span>
+                            <span class="kpi-text">Sales Today</span>
+                        </button>
+
+                        <button name="action_open_today_sales" type="object" class="kpi-tile">
+                            <span class="kpi-value"><field name="vat_today"/></span>
+                            <span class="kpi-text">VAT Today</span>
+                        </button>
+
+                        <button name="action_open_today_sales" type="object" class="kpi-tile">
+                            <span class="kpi-value"><field name="orders_today"/></span>
+                            <span class="kpi-text">Orders Today</span>
+                        </button>
+
+                        <button name="action_open_week_sales" type="object" class="kpi-tile">
+                            <span class="kpi-value"><field name="sales_week"/></span>
+                            <span class="kpi-text">Sales This Week</span>
+                        </button>
+
+                        <button name="action_open_ap_unpaid" type="object" class="kpi-tile">
+                            <span class="kpi-value"><field name="accounts_payable_total"/></span>
+                            <span class="kpi-text">AP Due</span>
+                        </button>
+
+                        <button name="action_open_ap_overdue" type="object" class="kpi-tile">
+                            <span class="kpi-value">—</span>
+                            <span class="kpi-text">AP Overdue</span>
+                        </button>
+
+                        
+                    </div>
+
+                    <group>
+                        <group>
+                            <field name="trend_range"/>
+                        </group>
+                        <group>
+                            <field name="payments_badge_html" nolabel="1"/>
+                        </group>
+                    </group>
+
+                    <div class="fd-grid">
+                        <div class="fd-card">
+                            <div class="fd-title">Sales &amp; VAT (Last 7 Days)</div>
+                            <field name="sales_vat_last7_html" nolabel="1"/>
+                        </div>
+
+                        <div class="fd-card fd-list">
+                            <div class="fd-title">Top Sellers</div>
+                            <field name="top_sellers_html" nolabel="1"/>
+                            <div class="fd-title" style="margin-top:10px;">Fast Movers</div>
+                            <field name="fast_movers_html" nolabel="1"/>
+                        </div>
+                        
+                        <div class="fd-card" style="grid-column: 1 / span 2;">
+                            <div class="fd-title">AP Aging</div>
+                            <field name="ap_aging_html" nolabel="1"/>
+                            <div style="margin-top:8px;">
+                                <button name="action_open_ap_unpaid" type="object" string="Open AP (Unpaid)" class="btn-secondary"/>
+                                <button name="action_open_ap_paid_month" type="object" string="Open Paid (This Month)"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <footer>
+                        <button name="action_open_today_sales" type="object" string="View Today" class="btn-primary"/>
+                        <button name="action_open_week_sales" type="object" string="View Week"/>
+                        <button name="action_open_month_sales" type="object" string="View Month"/>
+                    </footer>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_finance_dashboard" model="ir.actions.act_window">
+        <field name="name">Finance Dashboard</field>
+        <field name="res_model">finance.dashboard</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context">{"default_date_today": context_today()}</field>
+    </record>
+
+    <menuitem id="menu_finance_dashboard" name="Dashboard" parent="menu_finance_root" action="action_finance_dashboard" sequence="0"/>
+</odoo>

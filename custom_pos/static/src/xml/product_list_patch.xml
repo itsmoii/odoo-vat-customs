@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+  <!-- Render products as a compact list (name + price), still using screen helpers -->
+  <t t-extend="point_of_sale.ProductScreen">
+    <t t-jquery="//div[contains(@class,'product-list')]" t-operation="replace">
+      <div class="product-list custom-list overflow-y-auto px-2 pt-0 pb-2">
+        <div t-foreach="productsToDisplay" t-as="product" t-key="product.id"
+             t-on-click="() => this.addProductToOrder(product)"
+             class="product-list-item d-flex align-items-center py-2 border-bottom cursor-pointer">
+          <div class="flex-grow-1 text-truncate" t-esc="getProductName(product)" />
+          <div class="text-end ms-3" t-esc="getProductPrice(product)" />
+        </div>
+      </div>
+    </t>
+  </t>
+</templates>
+

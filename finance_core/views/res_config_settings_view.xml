@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_finance_res_config_settings" model="ir.ui.view">
+        <field name="name">finance.res.config.settings</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.view_res_config_settings"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@id='settings']" position="inside">
+                <div class="app_settings_block" data-string="Mini Supermarket Finance" string="Mini Supermarket Finance">
+                    <h2>POS End of Day</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="finance_pos_eod_journal_id"/>
+                                <field name="finance_pos_revenue_account_id"/>
+                                <field name="finance_pos_vat_account_id"/>
+                                <field name="finance_pos_clearing_account_id"/>
+                            </div>
+                        </div>
+                    </div>
+                    <h2>Purchases &amp; AP</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="finance_auto_bill_on_receipt"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
+

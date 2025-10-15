@@ -1,0 +1,60 @@
+<odoo>
+    <data noupdate="1">
+
+    <!-- POS VAT 12.5% Sales (reuses FRCS VAT group from l10n_fj_minicoa) -->
+    <record id="tax_vat_125_sale" model="account.tax">
+        <field name="name">POS VAT 12.5% (Sales)</field>
+        <field name="amount">12.5</field>
+        <field name="amount_type">percent</field>
+        <field name="type_tax_use">sale</field>
+        <field name="price_include">False</field>
+        <field name="tax_group_id" ref="l10n_fj_minicoa.tax_group_vat"/>
+        <field name="company_id" ref="base.main_company"/>
+        <field name="country_id" ref="base.fj"/>
+        <field name="invoice_repartition_line_ids" eval="[(5,0,0), (0,0,{'repartition_type':'base','factor_percent':100}), (0,0,{'repartition_type':'tax','factor_percent':100})]"/>
+        <field name="refund_repartition_line_ids"  eval="[(5,0,0), (0,0,{'repartition_type':'base','factor_percent':100}), (0,0,{'repartition_type':'tax','factor_percent':100})]"/>
+    </record>
+
+    <!-- POS VAT 0% Sales (zero-rated) -->
+    <record id="tax_vat_0_sale" model="account.tax">
+        <field name="name">POS VAT 0% (Sales)</field>
+        <field name="amount">0.0</field>
+        <field name="amount_type">percent</field>
+        <field name="type_tax_use">sale</field>
+        <field name="price_include">False</field>
+        <field name="tax_group_id" ref="l10n_fj_minicoa.tax_group_vat"/>
+        <field name="company_id" ref="base.main_company"/>
+        <field name="country_id" ref="base.fj"/>
+        <field name="invoice_repartition_line_ids" eval="[(5,0,0), (0,0,{'repartition_type':'base','factor_percent':100}), (0,0,{'repartition_type':'tax','factor_percent':100})]"/>
+        <field name="refund_repartition_line_ids"  eval="[(5,0,0), (0,0,{'repartition_type':'base','factor_percent':100}), (0,0,{'repartition_type':'tax','factor_percent':100})]"/>
+    </record>
+
+    <!-- POS VAT 12.5% Purchase -->
+    <record id="tax_vat_125_purchase" model="account.tax">
+        <field name="name">POS VAT 12.5% (Purchase)</field>
+        <field name="amount">12.5</field>
+        <field name="amount_type">percent</field>
+        <field name="type_tax_use">purchase</field>
+        <field name="price_include">False</field>
+        <field name="tax_group_id" ref="l10n_fj_minicoa.tax_group_vat"/>
+        <field name="company_id" ref="base.main_company"/>
+        <field name="country_id" ref="base.fj"/>
+        <field name="invoice_repartition_line_ids" eval="[(5,0,0), (0,0,{'repartition_type':'base','factor_percent':100}), (0,0,{'repartition_type':'tax','factor_percent':100})]"/>
+        <field name="refund_repartition_line_ids"  eval="[(5,0,0), (0,0,{'repartition_type':'base','factor_percent':100}), (0,0,{'repartition_type':'tax','factor_percent':100})]"/>
+    </record>
+
+    <!-- POS VAT 0% Purchase -->
+    <record id="tax_vat_0_purchase" model="account.tax">
+        <field name="name">POS VAT 0% (Purchase)</field>
+        <field name="amount">0.0</field>
+        <field name="amount_type">percent</field>
+        <field name="type_tax_use">purchase</field>
+        <field name="price_include">False</field>
+        <field name="tax_group_id" ref="l10n_fj_minicoa.tax_group_vat"/>
+        <field name="company_id" ref="base.main_company"/>
+        <field name="country_id" ref="base.fj"/>
+        <field name="invoice_repartition_line_ids" eval="[(5,0,0), (0,0,{'repartition_type':'base','factor_percent':100}), (0,0,{'repartition_type':'tax','factor_percent':100})]"/>
+        <field name="refund_repartition_line_ids"  eval="[(5,0,0), (0,0,{'repartition_type':'base','factor_percent':100}), (0,0,{'repartition_type':'tax','factor_percent':100})]"/>
+    </record>
+    </data>
+</odoo>

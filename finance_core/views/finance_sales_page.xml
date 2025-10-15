@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_finance_sales_details_form" model="ir.ui.view">
+        <field name="name">finance.sales.details.form</field>
+        <field name="model">finance.sales.details</field>
+        <field name="arch" type="xml">
+            <form string="Sales Details">
+                <sheet>
+                    <group>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                        <button name="action_open_orders" type="object" string="Open Orders" class="btn-primary"/>
+                    </group>
+                    <group>
+                        <group string="KPIs">
+                            <field name="total_sales"/>
+                            <field name="total_vat"/>
+                            <field name="orders_count"/>
+                            <field name="avg_basket"/>
+                        </group>
+                        <group>
+                            <field name="payments_split_html" nolabel="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="trend_html" nolabel="1"/>
+                        <field name="top_sellers_html" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_finance_sales_summary" model="ir.actions.act_window">
+        <field name="name">Sales Details</field>
+        <field name="res_model">finance.sales.details</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context">{"default_date_from": context_today(), "default_date_to": context_today()}</field>
+    </record>
+
+    <menuitem id="menu_finance_sales_summary" name="Sales Details (Summary)" parent="finance_core.menu_finance_sales_root" action="action_finance_sales_summary" sequence="2"/>
+</odoo>

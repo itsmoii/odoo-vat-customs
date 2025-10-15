@@ -1,0 +1,183 @@
+/* Finance Dashboard styling */
+.o_form_view.finance-dashboard {
+  /* Finance banner bar (dark blue with white text) */
+  .fd-header {
+    background: linear-gradient(135deg, #3e5472 0%, #1e3a8a 60%, #0ea5e9 100%);
+    color: #fff;
+    padding: 18px 22px;
+    border-radius: 14px;
+    box-shadow: 0 10px 22px rgba(14, 165, 233, 0.25);
+    margin: 6px 0 22px;
+    text-align: center;
+  }
+  .fd-header h1 {
+    font-size: 40px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: .5px;
+    margin: 0;
+  }
+  .oe_button_box {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+    justify-content: center;
+  }
+
+  .oe_stat_button {
+    background: #0b3b7e; /* dark blue */
+    color: #fff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    box-shadow: 0 6px 14px rgba(11,59,126,0.22);
+    transition: transform 120ms ease, box-shadow 120ms ease;
+    min-width: 180px;
+    text-align: center;
+    .o_stat_info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      align-items: center;
+    }
+    /* Label on top, value below */
+    .o_stat_text { order: 0; font-size: 12px; opacity: .98; font-weight: 700; letter-spacing: .2px; text-transform: none; }
+    .o_stat_value { order: 1; font-size: 22px; font-weight: 800; letter-spacing: .2px; }
+    /* Hide default icons for a clean look */
+    i.fa, .o_stat_icon { display: none; }
+  }
+  .oe_stat_button:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(11,59,126,0.28); }
+
+  .fd-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  .fd-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    padding: 12px 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+
+  .fd-title { font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 8px; }
+  .fd-list ul { margin: 0; padding-left: 16px; }
+
+  .fd-badges { margin: 6px 0 8px; }
+  .fd-badges .badge {
+    display: inline-block;
+    padding: 4px 8px;
+    margin: 2px 6px 2px 0;
+    border-radius: 999px;
+    font-size: 12px;
+    background: #eef2ff;
+  }
+
+  /* Custom KPI tiles */
+  .fd-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 4px 0 14px;
+  }
+  .fd-kpis .kpi-tile {
+    background: #0b3b7e; /* dark blue */
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 14px;
+    /* Align label and value with the same left edge */
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(11,59,126,0.22);
+    transition: transform 120ms ease, box-shadow 120ms ease;
+  }
+  /* Ensure both the numeric value and its label align left */
+  .fd-kpis .kpi-tile .kpi-value,
+  .fd-kpis .kpi-tile .kpi-text { text-align: left; }
+  .fd-kpis .kpi-tile:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(11,59,126,0.28); }
+  .fd-kpis .kpi-text { display: block; font-size: 12px; font-weight: 700; opacity: .98; letter-spacing: .2px; }
+  .fd-kpis .kpi-value { display: block; font-size: 22px; font-weight: 800; margin-top: 2px; letter-spacing: .2px; }
+
+  table.o_list_view {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  table.o_list_view th, table.o_list_view td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  /* Dashboard table styling */
+  table.fd-table {
+    width: 100%;
+    border-collapse: separate; /* allow rounded corners */
+    border-spacing: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden; /* clip rounded corners */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    background: #fff;
+  }
+  table.fd-table thead th {
+    background: #f1f5f9; /* slate-100 */
+    color: #111827; /* gray-900 */
+    font-weight: 600;
+    font-size: 13px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  table.fd-table tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  table.fd-table tbody tr:nth-child(even) td { background: #fafafa; }
+  table.fd-table tbody tr:hover td { background: #eef2ff; }
+  /* Improve numeric alignment readability */
+  table.fd-table td[style*="text-align:right"] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Positive/negative accents for change percentages */
+  .fd-change-pos { color: #16a34a; font-weight: 600; }
+  .fd-change-neg { color: #dc2626; font-weight: 600; }
+
+  /* Color variants for dashboard tables */
+  table.fd-table.fd-table--blue {
+    border-color: #dbeafe; /* blue-200 */
+  }
+  table.fd-table.fd-table--blue thead th {
+    background: linear-gradient(135deg, #3e5472 0%, #1e3a8a 60%, #0ea5e9 100%);
+    color: #fff;
+  }
+  table.fd-table.fd-table--blue tbody tr:nth-child(even) td { background: #f8fbff; }
+  table.fd-table.fd-table--blue tbody tr:hover td { background: #e6f0ff; }
+
+  table.fd-table.fd-table--amber { border-color: #fde68a; /* amber-200 */ }
+  table.fd-table.fd-table--amber thead th {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #fff;
+  }
+  table.fd-table.fd-table--amber tbody tr:nth-child(even) td { background: #fffaf0; }
+  table.fd-table.fd-table--amber tbody tr:hover td { background: #fff7ed; }
+
+  table.fd-table.fd-table--green { border-color: #bbf7d0; /* green-200 */ }
+  table.fd-table.fd-table--green thead th {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: #fff;
+  }
+  table.fd-table.fd-table--green tbody tr:nth-child(even) td { background: #f0fdf4; }
+  table.fd-table.fd-table--green tbody tr:hover td { background: #ecfdf5; }
+
+  table.fd-table.fd-table--indigo { border-color: #c7d2fe; /* indigo-200 */ }
+  table.fd-table.fd-table--indigo thead th {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: #fff;
+  }
+  table.fd-table.fd-table--indigo tbody tr:nth-child(even) td { background: #f5f7ff; }
+  table.fd-table.fd-table--indigo tbody tr:hover td { background: #eef2ff; }
+}

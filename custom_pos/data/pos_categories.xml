@@ -1,0 +1,16 @@
+<odoo>
+  <!-- Supermarket-style POS Categories -->
+  <record id="pos_category_beverages" model="pos.category">
+    <field name="name">Beverages</field>
+  </record>
+  <record id="pos_category_dairy" model="pos.category">
+    <field name="name">Dairy</field>
+  </record>
+  <record id="pos_category_snacks" model="pos.category">
+    <field name="name">Snacks</field>
+  </record>
+  <record id="pos_category_produce" model="pos.category">
+    <field name="name">Produce</field>
+  </record>
+</odoo>
+

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+  <!-- Append per-unit Tax and Total to the orderline info list -->
+  <t t-extend="point_of_sale.Orderline">
+    <t t-jquery="//ul[contains(@class,'info-list')]" t-operation="append">
+      <li class="frcs-pos-unit-tax">
+        <span>Tax:</span>
+        <span t-esc="line.unitTax"/>
+      </li>
+      <li class="frcs-pos-unit-total">
+        <span>Total:</span>
+        <span t-esc="line.unitTotal"/>
+      </li>
+    </t>
+  </t>
+</templates>
+
