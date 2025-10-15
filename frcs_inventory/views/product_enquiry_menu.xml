@@ -1,0 +1,13 @@
+<odoo>
+  <data>
+    <menuitem id="menu_product_enquiry"
+              name="Product Enquiry"
+              parent="stock.menu_stock_inventory_control"
+              action="action_product_enquiry_wizard"
+              sequence="60"
+              groups="stock.group_stock_user,point_of_sale.group_pos_user"/>
+
+    <!-- Future customizations:
+         - Inherit action_product_enquiry_wizard to add bespoke filters or results handling -->
+  </data>
+</odoo>

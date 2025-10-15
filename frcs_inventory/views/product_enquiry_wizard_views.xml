@@ -1,0 +1,35 @@
+<odoo>
+  <data>
+    <record id="view_product_enquiry_wizard_form" model="ir.ui.view">
+      <field name="name">frcs.product.enquiry.wizard.form</field>
+      <field name="model">frcs.product.enquiry.wizard</field>
+      <field name="arch" type="xml">
+        <form string="Product Enquiry">
+          <sheet>
+            <group col="2">
+              <field name="item_code"/>
+              <field name="item_name"/>
+              <field name="item_short_description"/>
+              <field name="supplier_code"/>
+              <field name="product_category_id"/>
+              <field name="product_type"/>
+            </group>
+          </sheet>
+          <footer>
+            <button name="action_search" type="object" string="Search" class="btn-primary"/>
+            <button name="action_reset" type="object" string="Reset" class="btn-secondary"/>
+            <button string="Close" class="btn-secondary" special="cancel"/>
+          </footer>
+        </form>
+      </field>
+    </record>
+
+    <record id="action_product_enquiry_wizard" model="ir.actions.act_window">
+      <field name="name">Product Enquiry</field>
+      <field name="res_model">frcs.product.enquiry.wizard</field>
+      <field name="view_mode">form</field>
+      <field name="target">new</field>
+      <field name="groups_id" eval="[(6, 0, [ref('stock.group_stock_user'), ref('point_of_sale.group_pos_user')])]"/>
+    </record>
+  </data>
+</odoo>

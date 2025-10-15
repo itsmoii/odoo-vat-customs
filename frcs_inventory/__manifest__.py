@@ -4,17 +4,18 @@
     "summary": "Inventory extensions for FRCS compliance (GTIN, tax label, groundwork)",
     "author": "USP Team 10",
     "license": "LGPL-3",
-    "depends": ["stock", "product", "account", "point_of_sale", "l10n_fj_minicoa"],  # POS + CoA + FRCS
+    "depends": ["stock", "product", "account", "point_of_sale", "l10n_fj_minicoa","mail"],  # POS + CoA + FRCS
+    "external_dependencies": {"python": ["xlsxwriter"]},
     "data": [
         "security/ir.model.access.csv",
         "data/product_categories.xml",
         "views/product_views.xml",
         "views/tax_products_views.xml",
         "views/server_actions.xml",
-        
         "report/product_master_report.xml",
         "views/menu_actions.xml",
-
+        "views/product_enquiry_wizard_views.xml",
+        "views/product_enquiry_menu.xml"
     ],
     "assets": {
         "web.assets_backend": [

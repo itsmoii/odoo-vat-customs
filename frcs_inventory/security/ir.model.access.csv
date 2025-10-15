@@ -1,3 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_tax_products_user,access.tax.products,model_tax_products,base.group_user,1,0,0,0
 access_tax_bulk_wizard_user,access.tax.bulk.wizard,model_tax_bulk_wizard,base.group_user,1,1,1,1
+access_product_enquiry_wizard_stock,access_product_enquiry_wizard_stock,model_frcs_product_enquiry_wizard,stock.group_stock_user,1,1,1,1
+access_product_enquiry_wizard_pos,access_product_enquiry_wizard_pos,model_frcs_product_enquiry_wizard,point_of_sale.group_pos_user,1,1,1,1

@@ -6,7 +6,7 @@ from datetime import datetime
 
 class FrcsInventoryXlsxController(http.Controller):
 
-    @http.route('/frcs_inventory/product_master_xlsx', type='http', auth='user')
+    @http.route('/frcs_inventory/product_master_xlsx', type='http', auth='user', methods=['GET'], csrf=False)
     def frcs_product_master_xlsx(self, **kwargs):
         # Fetch products; you can add filters via kwargs if needed later
         products = request.env['product.template'].sudo().search([])
@@ -34,9 +34,9 @@ class FrcsInventoryXlsxController(http.Controller):
             ws.write(row, 3, p.frcs_gtin or '')
             ws.write(row, 4, p.frcs_tax_label or '')
             ws.write(row, 5, p.write_uid.display_name if p.write_uid else '')
-            # write_date is a string/utc timestamp; let’s try to render nicely
+            # write_date is a string/utc timestamp; let's try to render nicely
             if p.write_date:
-                # Odoo stores UTC; we’ll just dump it as text or parse if needed
+                # Odoo stores UTC; we'll just dump it as text or parse if needed
                 ws.write(row, 6, str(p.write_date))
             else:
                 ws.write(row, 6, '')

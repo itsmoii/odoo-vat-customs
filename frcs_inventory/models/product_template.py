@@ -393,7 +393,7 @@ class ProductTemplate(models.Model):
     @api.constrains("barcode", "frcs_gtin")
     def _check_barcode_matches_gtin(self):
         """
-        If barcode is present AND is purely 8–14 digits (i.e., looks like a GTIN),
+        If barcode is present AND is purely 8-14 digits (i.e., looks like a GTIN),
         then it must match frcs_gtin to avoid mismatches during POS scanning & fiscalization.
         """
         for rec in self:
