@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="custom_pos_orderline_price_override" xml:space="preserve">
+  <!-- Replace the top-right price of the orderline with the tax-included unit total -->
+  <t t-extend="point_of_sale.Orderline">
+    <t t-jquery="div.product-price.price" t-operation="replace">
+      <div class="product-price price fw-bolder">
+        <t t-if="line.discount === '100'">Free</t>
+        <t t-else="" t-esc="line.unitTotal"/>
+      </div>
+    </t>
+  </t>
+</templates>

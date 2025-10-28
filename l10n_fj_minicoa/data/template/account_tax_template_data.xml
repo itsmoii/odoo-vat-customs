@@ -12,4 +12,3 @@
         <field name="country_id" ref="base.fj"/>
     </record>
 </odoo>
-

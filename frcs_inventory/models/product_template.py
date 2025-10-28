@@ -99,6 +99,36 @@ class ProductTemplate(models.Model):
     x_is_expiring_soon = fields.Boolean(string="Expiring Soon", compute="_compute_expiry_flags", store=True)
 
     # Tax grouping helper for UI: Taxable vs Non-Taxable (0% or no tax)
+    tax_category = fields.Selection(
+        selection=[
+            ('taxable', 'Taxable'),
+            ('non_taxable', 'Non-Taxable'),
+        ],
+        string="Tax Category",
+        compute="_compute_tax_category",
+        store=True,
+    )
+
+    @api.depends(
+        'taxes_id', 'taxes_id.amount', 'taxes_id.amount_type',
+        'taxes_id.children_tax_ids', 'taxes_id.children_tax_ids.amount'
+    )
+    def _compute_tax_category(self):
+        for product in self:
+            taxable = False
+            for tax in product.taxes_id:
+                amt = tax.amount or 0.0
+                if getattr(tax, 'amount_type', '') == 'group':
+                    for child in getattr(tax, 'children_tax_ids', []):
+                        if (child.amount or 0.0) > 0:
+                            amt = child.amount
+                            break
+                if amt > 0:
+                    taxable = True
+                    break
+            product.tax_category = 'taxable' if taxable else 'non_taxable'
+
+    # Legacy keyword-based classification kept for backward-compatibility
     tax_status = fields.Selection(
         selection=[
             ('taxable', 'Taxable Products'),
@@ -303,11 +333,16 @@ class ProductTemplate(models.Model):
     @api.depends(
         'list_price', 'currency_id',
         'x_sale_tax_id', 'x_sale_tax_id.amount', 'x_sale_tax_id.amount_type', 'x_sale_tax_id.price_include',
-        'frcs_tax_id', 'frcs_tax_id.amount', 'frcs_tax_id.amount_type', 'frcs_tax_id.price_include'
+        'frcs_tax_id', 'frcs_tax_id.amount', 'frcs_tax_id.amount_type', 'frcs_tax_id.price_include',
+        # also react when the native customer taxes change (bulk ops)
+        'taxes_id', 'taxes_id.amount', 'taxes_id.amount_type', 'taxes_id.price_include'
     )
     def _compute_tax_display(self):
         for rec in self:
+            # Prefer explicit FRCS fields, then fall back to the first sale tax on the product
             tax = rec.x_sale_tax_id or rec.frcs_tax_id
+            if not tax and rec.taxes_id:
+                tax = rec.taxes_id.filtered(lambda t: t.type_tax_use == 'sale')[:1]
             price = rec.list_price or 0.0
             rate = 0.0
             tax_amount = 0.0
@@ -409,6 +444,80 @@ class ProductTemplate(models.Model):
         for rec in self:
             if rec.frcs_gtin and _GTIN_RE.match(rec.frcs_gtin) and not rec.barcode:
                 rec.barcode = rec.frcs_gtin
+
+    # Dashboard data providers for the custom Inventory dashboard
+    @api.model
+    def get_top_selling_products(self):
+        """Return top 10 fast-moving products.
+        Prefer POS data if available; otherwise fall back to Sale Orders when present.
+        """
+        cr = self.env.cr
+        rows = []
+        pos_available = False
+        try:
+            cr.execute("SELECT to_regclass('public.pos_order_line')")
+            row = cr.fetchone()
+            pos_available = bool(row and row[0])
+        except Exception:
+            pos_available = False
+
+        if pos_available:
+            cr.execute(
+                """
+                SELECT pt.name, COALESCE(SUM(pol.qty), 0) AS qty_sold
+                FROM pos_order_line pol
+                JOIN pos_order po ON pol.order_id = po.id
+                JOIN product_product pp ON pol.product_id = pp.id
+                JOIN product_template pt ON pp.product_tmpl_id = pt.id
+                WHERE po.state IN ('paid','done','invoiced')
+                GROUP BY pt.name
+                ORDER BY qty_sold DESC
+                LIMIT 10
+                """
+            )
+            rows = cr.dictfetchall()
+        else:
+            sale_available = False
+            try:
+                cr.execute("SELECT to_regclass('public.sale_order_line')")
+                row = cr.fetchone()
+                sale_available = bool(row and row[0])
+            except Exception:
+                sale_available = False
+            if sale_available:
+                cr.execute(
+                    """
+                    SELECT pt.name, COALESCE(SUM(sol.product_uom_qty), 0) AS qty_sold
+                    FROM sale_order_line sol
+                    JOIN sale_order so ON sol.order_id = so.id
+                    JOIN product_product pp ON sol.product_id = pp.id
+                    JOIN product_template pt ON pp.product_tmpl_id = pt.id
+                    WHERE so.state IN ('sale','done')
+                    GROUP BY pt.name
+                    ORDER BY qty_sold DESC
+                    LIMIT 10
+                    """
+                )
+                rows = cr.dictfetchall()
+        return rows
+
+    @api.model
+    def get_expiring_products(self, days=30, limit=20):
+        from datetime import date, timedelta
+        today = date.today()
+        soon = today + timedelta(days=int(days or 30))
+        domain = [
+            ('x_expiry_date', '>=', fields.Date.to_string(today)),
+            ('x_expiry_date', '<=', fields.Date.to_string(soon)),
+        ]
+        products = self.search(domain, order='x_expiry_date asc', limit=limit)
+        return [
+            {
+                'name': p.display_name,
+                'product_expiry': p.x_expiry_date and fields.Date.to_string(p.x_expiry_date) or '',
+            }
+            for p in products
+        ]
 
 
 class ProductTemplateExt(models.Model):

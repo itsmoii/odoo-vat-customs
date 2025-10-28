@@ -1,0 +1,60 @@
+/* POS tidy layout: slimmer category bar, cleaner product tiles */
+
+/* Category bar: single-row, scrollable chips */
+.product-screen .category-list {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 0.5rem !important;
+  overflow-x: auto !important;
+  padding: 0.25rem 0.25rem !important;
+}
+
+.product-screen .category-list .category-button {
+  height: 2.25rem !important;
+  line-height: 2.25rem;
+  padding-inline: 0.75rem !important;
+  border: 1px solid var(--o-gray-300, #d8dadd) !important;
+  background: var(--o-view-background, #fff) !important;
+  box-shadow: none !important;
+}
+
+/* Neutralize strong color badges on categories */
+.product-screen .category-list [class*="o_colorlist_item_color_"] {
+  background-color: var(--o-view-background, #fff) !important;
+}
+
+.product-screen .category-img-thumb { display: none !important; }
+
+/* Product grid spacing and card look */
+.product-screen .product-list {
+  gap: 0.5rem !important;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+}
+
+.product-screen .product-list .product {
+  background: #fff !important;
+  border: 1px solid var(--o-gray-300, #d8dadd) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
+}
+
+/* Remove random color backgrounds on tiles */
+.product-screen .product-list .product[class*="o_colorlist_item_color_transparent_"] {
+  background-color: #fff !important;
+}
+
+/* Product name clamping and readability */
+.product-screen .product .product-name {
+  font-size: 0.95rem !important;
+  font-weight: 600;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+  overflow: hidden;
+}
+
+/* Hide the small info tag icon to reduce clutter; reveal on hover */
+.product-screen .product .product-information-tag { opacity: 0; transition: opacity .15s ease; }
+.product-screen .product:hover .product-information-tag { opacity: 1; }
+
+/* Order summary padding alignment */
+.product-screen .leftpane .pads { padding-top: 0.25rem; }

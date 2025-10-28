@@ -29,17 +29,18 @@ class POSJournalSetup(models.TransientModel):
         ]
 
         # Find a liquidity account to plug on cash/bank journals when missing
-        liquidity = self.env['account.account'].search([
-            ('company_id', '=', company.id),
-            ('account_type', '=', 'asset_cash'),
-        ], limit=1)
+        Account = self.env['account.account']
+        domain = [('account_type', '=', 'asset_cash')]
+        if 'company_id' in Account._fields:
+            domain.insert(0, ('company_id', '=', company.id))
+        liquidity = Account.search(domain, limit=1)
 
         for j in journals_data:
             Journal = self.env['account.journal']
-            existing = Journal.search([
-                ('code', '=', j['code']),
-                ('company_id', '=', company.id),
-            ], limit=1)
+            j_domain = [('code', '=', j['code'])]
+            if 'company_id' in Journal._fields:
+                j_domain.append(('company_id', '=', company.id))
+            existing = Journal.search(j_domain, limit=1)
 
             vals = {
                 'name': j['name'],
@@ -51,11 +52,9 @@ class POSJournalSetup(models.TransientModel):
                 vals['default_account_id'] = liquidity.id
 
             if not existing:
-                Journal.create({
-                    **vals,
-                    'code': j['code'],
-                    'company_id': company.id,
-                })
+                create_vals = {**vals, 'code': j['code']}
+                if 'company_id' in Journal._fields:
+                    create_vals['company_id'] = company.id
+                Journal.create(create_vals)
             else:
                 existing.write(vals)
-

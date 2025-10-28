@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="custom_pos_product_card_price" xml:space="preserve">
+    <!-- Extend the ProductCard tile and append a price line -->
+    <t t-extend="point_of_sale.ProductCard">
+        <t t-jquery=".product-name" t-operation="after">
+            <div class="product-tile-price o-muted">
+                <t t-esc="tileDisplayPrice"/>
+            </div>
+        </t>
+    </t>
+</templates>
+

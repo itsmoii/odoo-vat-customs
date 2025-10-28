@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Hide the default Inventory Overview menu (Overview of Operation Types) -->
+    <record id="stock.stock_picking_type_menu" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+        <field name="action" eval="False"/>
+    </record>
+
+    <!-- Also disable the underlying window action to avoid direct access via URL -->
+    <record id="stock.stock_picking_type_action" model="ir.actions.act_window">
+        <field name="active" eval="False"/>
+    </record>
+
+    <!-- Redirect the root Inventory menu to the custom dashboard action -->
+    <record id="stock.menu_stock_root" model="ir.ui.menu">
+        <field name="action" ref="frcs_inventory.action_frcs_inventory_dashboard"/>
+    </record>
+</odoo>

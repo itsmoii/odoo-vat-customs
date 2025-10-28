@@ -1,60 +1,94 @@
 from odoo import api, SUPERUSER_ID
+from .fix_company_alignment import align_tax_companies
 
 
-def post_init_hook(cr, registry):
+def post_init_hook(env):
     """
-    Ensure FRCS VAT tax group and 0% / 12.5% taxes exist for every company.
-    This avoids empty dropdowns in multi-company environments.
+    Ensure FRCS VAT tax group and taxes exist for the installing company,
+    align VAT tax line accounts, and repair mismatches without cross-company writes.
     """
-    env = api.Environment(cr, SUPERUSER_ID, {})
 
-    Company = env['res.company']
-    Tax = env['account.tax']
-    TaxGroup = env['account.tax.group']
-
-    for company in Company.search([]):
+    company = env.company
+    for company in [company]:
+        # Company-scoped env and models
+        local_env = env.with_context(allowed_company_ids=[company.id]).with_company(company)
+        Tax = local_env['account.tax']
+        TaxGroup = local_env['account.tax.group']
         # Ensure a tax group per company
-        group = TaxGroup.search([
-            ('name', '=', 'FRCS VAT'),
-            ('company_id', '=', company.id),
-        ], limit=1)
+        tg_domain = [('name', '=', 'FRCS VAT')]
+        if 'company_id' in TaxGroup._fields:
+            tg_domain.append(('company_id', '=', company.id))
+        group = TaxGroup.search(tg_domain, limit=1)
         if not group:
-            group = TaxGroup.create({
-                'name': 'FRCS VAT',
-                'company_id': company.id,
-            })
+            vals = {'name': 'FRCS VAT'}
+            if 'company_id' in TaxGroup._fields:
+                vals['company_id'] = company.id
+            group = TaxGroup.create(vals)
 
-        # Ensure the four FRCS taxes per company
+        # Ensure FRCS VAT taxes exist per company; create when missing
         specs = [
-            {'name': 'FRCS VAT 0% (Sales)', 'type_tax_use': 'sale', 'amount': 0.0},
-            {'name': 'FRCS VAT 12.5% (Sales)', 'type_tax_use': 'sale', 'amount': 12.5},
-            {'name': 'FRCS VAT 0% (Purchase)', 'type_tax_use': 'purchase', 'amount': 0.0},
-            {'name': 'FRCS VAT 12.5% (Purchase)', 'type_tax_use': 'purchase', 'amount': 12.5},
+            {'label': '0% (Sales)', 'type_tax_use': 'sale', 'amount': 0.0},
+            {'label': '12.5% (Sales)', 'type_tax_use': 'sale', 'amount': 12.5},
+            {'label': '15% (Sales)', 'type_tax_use': 'sale', 'amount': 15.0},
+            {'label': '9% (Sales)', 'type_tax_use': 'sale', 'amount': 9.0},
+            {'label': '0% (Purchase)', 'type_tax_use': 'purchase', 'amount': 0.0},
+            {'label': '12.5% (Purchase)', 'type_tax_use': 'purchase', 'amount': 12.5},
+            {'label': '15% (Purchase)', 'type_tax_use': 'purchase', 'amount': 15.0},
+            {'label': '9% (Purchase)', 'type_tax_use': 'purchase', 'amount': 9.0},
         ]
 
-        # Attempt to locate VAT accounts from the localization module
-        vat_collected = env.ref('l10n_fj_minicoa.fj_21310', raise_if_not_found=False)
-        vat_paid = env.ref('l10n_fj_minicoa.fj_21330', raise_if_not_found=False)
+        # Resolve VAT accounts by code within the loop company to avoid cross-company writes
+        def _vat_account(code):
+            Account = local_env['account.account']
+            domain = [('code', '=', code)]
+            if 'company_id' in Account._fields:
+                domain.append(('company_id', '=', company.id))
+            return Account.search(domain, limit=1)
+
+        vat_collected = _vat_account('21310')
+        vat_paid = _vat_account('21330')
 
         for spec in specs:
-            tax = Tax.search([
-                ('name', '=', spec['name']),
-                ('company_id', '=', company.id),
-            ], limit=1)
+            # Prefer existing taxes by rate + type; allow any name
+            t_domain = [
+                ('type_tax_use', '=', spec['type_tax_use']),
+                ('amount_type', '=', 'percent'),
+                ('amount', '=', spec['amount']),
+                ('active', '=', True),
+            ]
+            if 'company_id' in Tax._fields:
+                t_domain.append(('company_id', '=', company.id))
+            tax = Tax.search(t_domain, limit=1)
             if not tax:
-                tax = Tax.create({
-                    'name': spec['name'],
+                vals = {
+                    'name': f"VAT {spec['amount']}% ({'Sales' if spec['type_tax_use']=='sale' else 'Purchase'})",
                     'type_tax_use': spec['type_tax_use'],
                     'amount_type': 'percent',
                     'amount': spec['amount'],
-                    'tax_group_id': group.id,
                     'company_id': company.id,
+                    'tax_group_id': group.id if group else False,
                     'active': True,
-                    'price_include': False,
-                })
+                    'price_include': not (spec['amount'] == 12.5 and spec['type_tax_use'] == 'sale'),
+                }
+                tax = Tax.create(vals)
+
+                # Ensure repartition lines exist: base 100 + tax 100
+                def _ensure(lines, field):
+                    base = lines.filtered(lambda l: l.repartition_type == 'base')
+                    taxl = lines.filtered(lambda l: l.repartition_type == 'tax')
+                    ops = []
+                    if not base:
+                        ops.append((0, 0, {'repartition_type': 'base', 'factor_percent': 100.0}))
+                    if not taxl:
+                        ops.append((0, 0, {'repartition_type': 'tax', 'factor_percent': 100.0}))
+                    if ops:
+                        tax.write({field: ops})
+
+                _ensure(tax.invoice_repartition_line_ids, 'invoice_repartition_line_ids')
+                _ensure(tax.refund_repartition_line_ids, 'refund_repartition_line_ids')
             # Ensure tax repartition lines have accounts
             wanted_account = vat_collected if spec['type_tax_use'] == 'sale' else vat_paid
-            if wanted_account:
+            if tax and wanted_account and (not hasattr(wanted_account, 'company_id') or wanted_account.company_id.id == company.id):
                 # set account on all tax repartition lines (invoice and refund)
                 (tax.invoice_repartition_line_ids | tax.refund_repartition_line_ids).filtered(
                     lambda l: l.repartition_type == 'tax'
@@ -64,17 +98,22 @@ def post_init_hook(cr, registry):
         # Ensure key control + COGS accounts
         # ------------------------------
         def ensure_account(code, name, account_type, reconcile=False):
-            acc = env['account.account'].search([
-                ('code', '=', code), ('company_id', '=', company.id)
-            ], limit=1)
+            Account = env['account.account']
+            a_domain = [('code', '=', code)]
+            if 'company_id' in Account._fields:
+                a_domain.append(('company_id', '=', company.id))
+            acc = Account.search(a_domain, limit=1)
             if not acc:
-                acc = env['account.account'].create({
+                vals = {
                     'code': code,
                     'name': name,
                     'account_type': account_type,
-                    'company_id': company.id,
-                    'reconcile': reconcile,
-                })
+                }
+                if 'company_id' in Account._fields:
+                    vals['company_id'] = company.id
+                if 'reconcile' in Account._fields:
+                    vals['reconcile'] = reconcile
+                acc = Account.create(vals)
             return acc
 
         cogs_acc = env.ref('l10n_fj_minicoa.fj_51000', raise_if_not_found=False) or ensure_account('51000', 'Cost of Goods Sold', 'expense')
@@ -83,13 +122,19 @@ def post_init_hook(cr, registry):
 
         # Set default on product categories where missing
         ProductCategory = env['product.category']
-        missing_expense = ProductCategory.search([('company_id', '=', company.id), ('property_account_expense_categ_id', '=', False)])
+        pc_domain = [('property_account_expense_categ_id', '=', False)]
+        if 'company_id' in ProductCategory._fields:
+            pc_domain.insert(0, ('company_id', '=', company.id))
+        missing_expense = ProductCategory.search(pc_domain)
         if cogs_acc and missing_expense:
             missing_expense.write({'property_account_expense_categ_id': cogs_acc.id})
 
         # Map POS payment methods to control accounts
         PaymentMethod = env['pos.payment.method']
-        for pm in PaymentMethod.search([('company_id', '=', company.id)]):
+        pm_domain = []
+        if 'company_id' in PaymentMethod._fields:
+            pm_domain.append(('company_id', '=', company.id))
+        for pm in PaymentMethod.search(pm_domain):
             journal = pm.journal_id
             if not journal:
                 continue
@@ -116,7 +161,11 @@ def post_init_hook(cr, registry):
 
         # Resolve stock accounts per company
         def by_code(code):
-            return env['account.account'].search([('code', '=', code), ('company_id', '=', company.id)], limit=1)
+            Account = env['account.account']
+            a_domain = [('code', '=', code)]
+            if 'company_id' in Account._fields:
+                a_domain.append(('company_id', '=', company.id))
+            return Account.search(a_domain, limit=1)
 
         stock_val = by_code('12000') or env.ref('l10n_fj_minicoa.stock_valuation', raise_if_not_found=False)
         stock_in = by_code('12100') or env.ref('l10n_fj_minicoa.stock_in', raise_if_not_found=False)
@@ -166,3 +215,96 @@ def post_init_hook(cr, registry):
             if stock_out: vals['property_stock_account_output_categ_id'] = stock_out.id
             if vals:
                 cat.write(vals)
+
+    # ------------------------------
+    # Bind existing VAT 12.5% taxes to XML IDs (no creation)
+    # ------------------------------
+    try:
+        # Bind XMLIDs and ensure symmetric repartition for the installing company only
+        local_env = env.with_context(allowed_company_ids=[company.id]).with_company(company)
+        Tax = local_env['account.tax']
+        IMD = local_env['ir.model.data']
+
+        def _bind_xmlid(module, name, model, rec):
+            imd = IMD.search([('module', '=', module), ('name', '=', name), ('model', '=', model)], limit=1)
+            if imd:
+                if imd.res_id != rec.id:
+                    imd.res_id = rec.id
+            else:
+                IMD.create({'module': module, 'name': name, 'model': model, 'res_id': rec.id, 'noupdate': True})
+
+        sale_domain = [
+            ('type_tax_use', '=', 'sale'),
+            ('amount_type', '=', 'percent'),
+            ('amount', '=', 12.5),
+        ]
+        if 'company_id' in Tax._fields:
+            sale_domain.insert(0, ('company_id', '=', company.id))
+        sale = Tax.search(sale_domain, order='id asc', limit=1)
+
+        purch_domain = [
+            ('type_tax_use', '=', 'purchase'),
+            ('amount_type', '=', 'percent'),
+            ('amount', '=', 12.5),
+        ]
+        if 'company_id' in Tax._fields:
+            purch_domain.insert(0, ('company_id', '=', company.id))
+        purch = Tax.search(purch_domain, order='id asc', limit=1)
+
+        if sale:
+            _bind_xmlid('frcs_inventory', 'vat_12_5_sale', 'account.tax', sale)
+        if purch:
+            _bind_xmlid('frcs_inventory', 'vat_12_5_purchase', 'account.tax', purch)
+
+        # Ensure symmetric repartition and map VAT accounts on the 12.5% pair
+        Account = local_env['account.account']
+        d1 = [('code', '=', '21310')]
+        d2 = [('code', '=', '21330')]
+        if 'company_id' in Account._fields:
+            d1.append(('company_id', '=', company.id))
+            d2.append(('company_id', '=', company.id))
+        acc21310 = Account.search(d1, limit=1)
+        acc21330 = Account.search(d2, limit=1)
+
+        for tax in (sale | purch):
+            if not tax:
+                continue
+            def _ensure(lines, field):
+                base = lines.filtered(lambda l: l.repartition_type == 'base')
+                taxl = lines.filtered(lambda l: l.repartition_type == 'tax')
+                ops = []
+                if not base:
+                    ops.append((0, 0, {'repartition_type': 'base', 'factor_percent': 100.0}))
+                if not taxl:
+                    ops.append((0, 0, {'repartition_type': 'tax', 'factor_percent': 100.0}))
+                if ops:
+                    tax.write({field: ops})
+
+            _ensure(tax.invoice_repartition_line_ids, 'invoice_repartition_line_ids')
+            _ensure(tax.refund_repartition_line_ids, 'refund_repartition_line_ids')
+
+            acc = acc21310 if tax.type_tax_use == 'sale' else acc21330
+            if acc:
+                (tax.invoice_repartition_line_ids | tax.refund_repartition_line_ids).filtered(
+                    lambda l: l.repartition_type == 'tax'
+                ).write({'account_id': acc.id})
+    except Exception:
+        # Binding should never break install/upgrade
+        pass
+
+    # Final repair: drop cross-company account assignments on tax lines
+    try:
+        Line = env['account.tax.repartition.line']
+        lines = Line.search([('account_id', '!=', False)])
+        mismatched = lines.filtered(lambda l: hasattr(l, 'company_id') and l.account_id.company_id and l.company_id and l.account_id.company_id.id != l.company_id.id)
+        if mismatched:
+            mismatched.write({'account_id': False})
+    except Exception:
+        pass
+
+    # Final alignment: ensure lines company matches tax company for Fiji VAT in env.company
+    try:
+        align_tax_companies(env, target_company=company)
+    except Exception:
+        # Never block install because of alignment heuristics
+        pass

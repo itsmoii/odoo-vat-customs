@@ -17,20 +17,25 @@ class AccountJournal(models.Model):
         Account = self.env['account.account'].with_company(company)
         Journal = self.env['account.journal'].with_company(company)
 
-        liquidity = Account.search([
-            ('account_type', '=', 'asset_cash'),
-            ('deprecated', '=', False),
-            ('company_id', '=', company.id),
-        ], limit=1)
+        # Build a robust domain that works across versions (company_id may not exist on account.account)
+        acc_domain = [('account_type', '=', 'asset_cash')]
+        if 'deprecated' in Account._fields:
+            acc_domain.append(('deprecated', '=', False))
+        elif 'active' in Account._fields:
+            acc_domain.append(('active', '=', True))
+        if 'company_id' in Account._fields:
+            acc_domain.append(('company_id', '=', company.id))
+
+        liquidity = Account.search(acc_domain, limit=1)
 
         if not liquidity:
             return True
 
         # Target cash/bank journals for this company
-        journals = Journal.search([
-            ('type', 'in', ('cash', 'bank')),
-            ('company_id', '=', company.id),
-        ])
+        j_domain = [('type', 'in', ('cash', 'bank'))]
+        if 'company_id' in Journal._fields:
+            j_domain.append(('company_id', '=', company.id))
+        journals = Journal.search(j_domain)
 
         # Decide what to write based on available fields in this Odoo
         write_keys = ['default_account_id']
@@ -56,4 +61,3 @@ class AccountJournal(models.Model):
                     continue
 
         return True
-

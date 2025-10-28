@@ -1,30 +1,40 @@
-# -*- coding: utf-8 -*-
+"""POS MiniCOA hooks with version-robust domains.
+
+This module avoids hard-coding fields that may differ across Odoo versions
+(e.g., account.account.company_id or deprecated vs active) by checking model
+_fields at runtime.
+"""
+
 from odoo import api, SUPERUSER_ID
 
 
 def pre_init_attach_journals(cr):
-    """
-    Pre-init hook disabled.
-    Runs before the ORM environment is ready, so we don't build an Environment here.
-    """
-    print("· Pre-init skipped: no environment created.")
+    """No-op pre-init hook."""
+    print("[pos_minicoa] Pre-init skipped: no environment created.")
     return True
 
 
 def _ensure_liquidity_account(env, company):
     Account = env['account.account']
-    acc = Account.search([
-        ('company_id', '=', company.id),
-        ('account_type', 'in', ['asset_cash']),
-        ('deprecated', '=', False),
-    ], limit=1)
+    domain = [('account_type', 'in', ['asset_cash'])]
+    if 'deprecated' in Account._fields:
+        domain.append(('deprecated', '=', False))
+    elif 'active' in Account._fields:
+        domain.append(('active', '=', True))
+    if 'company_id' in Account._fields:
+        domain.append(('company_id', '=', company.id))
+    acc = Account.search(domain, limit=1)
     if not acc:
-        acc = Account.search([
-            ('company_id', '=', company.id),
-            ('account_type', '=', 'asset_receivable'),
-            ('reconcile', '=', True),
-            ('deprecated', '=', False),
-        ], limit=1)
+        fallback = [('account_type', '=', 'asset_receivable')]
+        if 'reconcile' in Account._fields:
+            fallback.append(('reconcile', '=', True))
+        if 'deprecated' in Account._fields:
+            fallback.append(('deprecated', '=', False))
+        elif 'active' in Account._fields:
+            fallback.append(('active', '=', True))
+        if 'company_id' in Account._fields:
+            fallback.append(('company_id', '=', company.id))
+        acc = Account.search(fallback, limit=1)
     return acc
 
 
@@ -32,20 +42,25 @@ def _ensure_receivable_account(env, company):
     acc = getattr(company, 'account_default_pos_receivable_account_id', False)
     if acc:
         return acc
-    return env['account.account'].search([
-        ('company_id', '=', company.id),
-        ('account_type', '=', 'asset_receivable'),
-        ('reconcile', '=', True),
-        ('deprecated', '=', False),
-    ], limit=1)
+    Account = env['account.account']
+    domain = [('account_type', '=', 'asset_receivable')]
+    if 'reconcile' in Account._fields:
+        domain.append(('reconcile', '=', True))
+    if 'deprecated' in Account._fields:
+        domain.append(('deprecated', '=', False))
+    elif 'active' in Account._fields:
+        domain.append(('active', '=', True))
+    if 'company_id' in Account._fields:
+        domain.append(('company_id', '=', company.id))
+    return Account.search(domain, limit=1)
 
 
 def _ensure_bank_journal(env, company, name, code):
     Journal = env['account.journal']
-    journal = Journal.search([
-        ('name', '=', name),
-        ('company_id', '=', company.id),
-    ], limit=1)
+    j_domain = [('name', '=', name)]
+    if 'company_id' in Journal._fields:
+        j_domain.append(('company_id', '=', company.id))
+    journal = Journal.search(j_domain, limit=1)
     if journal:
         return journal
 
@@ -54,19 +69,20 @@ def _ensure_bank_journal(env, company, name, code):
         'name': name,
         'type': 'bank',
         'code': code,
-        'company_id': company.id,
     }
-    if 'default_account_id' in env['account.journal']._fields and liquidity:
+    if 'company_id' in Journal._fields:
+        vals['company_id'] = company.id
+    if 'default_account_id' in Journal._fields and liquidity:
         vals['default_account_id'] = liquidity.id
     return Journal.create(vals)
 
 
 def _ensure_pos_method(env, company, name, journal, outstanding=None):
     PM = env['pos.payment.method']
-    pm = PM.search([
-        ('name', '=', name),
-        ('company_id', '=', company.id),
-    ], limit=1)
+    pm_domain = [('name', '=', name)]
+    if 'company_id' in PM._fields:
+        pm_domain.append(('company_id', '=', company.id))
+    pm = PM.search(pm_domain, limit=1)
     if pm:
         updates = {}
         if pm.journal_id.id != journal.id:
@@ -81,9 +97,10 @@ def _ensure_pos_method(env, company, name, journal, outstanding=None):
     vals = {
         'name': name,
         'journal_id': journal.id,
-        'company_id': company.id,
         'payment_method_type': 'none',
     }
+    if 'company_id' in PM._fields:
+        vals['company_id'] = company.id
     if 'outstanding_account_id' in PM._fields and outstanding:
         vals['outstanding_account_id'] = outstanding.id
     return PM.create(vals)
@@ -91,7 +108,10 @@ def _ensure_pos_method(env, company, name, journal, outstanding=None):
 
 def _link_methods_to_all_configs(env, company, methods):
     Config = env['pos.config']
-    configs = Config.search([('company_id', '=', company.id)])
+    cfg_domain = []
+    if 'company_id' in Config._fields:
+        cfg_domain.append(('company_id', '=', company.id))
+    configs = Config.search(cfg_domain)
     for cfg in configs:
         cmds = []
         for pm in methods:
@@ -102,17 +122,17 @@ def _link_methods_to_all_configs(env, company, methods):
 
 
 def post_init_setup(env):
-    """Executed automatically after module installation: ensure Card/mPaisa payment methods and link to POS configs for ALL companies."""
+    """Executed after installation: ensure Card/mPaisa methods and link to POS configs across companies."""
     Company = env['res.company']
     companies = Company.search([])
-    print(f"· Post-init: ensuring Card/mPaisa for {len(companies)} companie(s)…")
+    print(f"[pos_minicoa] Post-init: ensuring Card/mPaisa for {len(companies)} company(ies)")
 
     for company in companies:
         with env.cr.savepoint():
             try:
                 receivable = _ensure_receivable_account(env, company)
                 if not receivable:
-                    print(f"! {company.name}: no receivable account found; skipping.")
+                    print(f"[pos_minicoa] {company.name}: no receivable account found; skipping.")
                     continue
 
                 card_journal = _ensure_bank_journal(env, company, 'Card', 'CARD')
@@ -122,7 +142,7 @@ def post_init_setup(env):
                 mpaisa_pm = _ensure_pos_method(env, company, 'M-Paisa', mpaisa_journal, outstanding=receivable)
 
                 _link_methods_to_all_configs(env, company, [card_pm, mpaisa_pm])
-                print(f"✓ {company.name}: Card/mPaisa ensured and linked.")
+                print(f"[pos_minicoa] {company.name}: Card/mPaisa ensured and linked.")
             except Exception as e:
-                print(f"! {company.name}: error while ensuring methods -> {e}")
+                print(f"[pos_minicoa] {company.name}: error while ensuring methods -> {e}")
     return True

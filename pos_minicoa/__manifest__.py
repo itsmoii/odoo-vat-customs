@@ -10,7 +10,6 @@
         "l10n_fj_minicoa",
     ],
     "data": [
-        "data/taxes.xml",
         "data/set_default_journal_accounts.xml",
         "views/accounting_menus.xml",
     ],

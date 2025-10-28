@@ -32,6 +32,9 @@ class ProductProduct(models.Model):
         # Ensure our field is available in the POS payload
         if 'x_total_price' not in fields_list:
             fields_list.append('x_total_price')
+        # Only include x_price_incl_tax if it exists on product.product in this DB
+        if 'x_price_incl_tax' in self._fields and 'x_price_incl_tax' not in fields_list:
+            fields_list.append('x_price_incl_tax')
         if 'total_price' not in fields_list:
             fields_list.append('total_price')
         return fields_list
