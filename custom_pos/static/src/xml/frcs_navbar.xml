@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates id="template" xml:space="preserve">
+    <t t-inherit="point_of_sale.Navbar" t-inherit-mode="extension" owl="1">
+        <xpath expr="//div[contains(@class,'p-2 pos-burger-menu-items')]" position="replace">
+            <DropdownItem t-if="!isDisplayStandalone" onSelected="() => window.open(this.appUrl)">
+                Install App
+            </DropdownItem>
+            <DropdownItem onSelected="() => this.pos.showScreen('TicketScreen')">
+                Orders <span t-if="orderCount gt 0" class="badge text-bg-info rounded-pill py-1 ms-2 float-end" t-esc="orderCount"/>
+            </DropdownItem>
+
+            <!-- NEW OPTIONSSS-->
+            <DropdownItem onSelected="() => this.toggleProformaMode()">
+                <t t-if="this.pos.proformaMode">
+                    Disable Proforma
+                </t>
+                <t t-else="">
+                    Enable Proforma
+                </t>
+            </DropdownItem>
+
+
+            <DropdownItem t-if="showCashMoveButton" onSelected="() => this.pos.cashMove()">
+                Cash In/Out
+            </DropdownItem>
+            <DropdownItem t-if="showToggleProductView" onSelected="() => this.toggleProductView()">
+                Switch Product View
+            </DropdownItem>
+            <DropdownItem t-if="showCreateProductButton" onSelected="() => this.pos.editProduct()">
+                Create Product
+            </DropdownItem>
+            <DropdownItem t-if="hardwareProxy.printer" onSelected="() => this.showSaleDetails()">
+                Print Report
+            </DropdownItem>
+            <DropdownItem onSelected="() => pos.closePos()">
+                Backend
+            </DropdownItem>
+            <DropdownItem onSelected="() => this.pos.closeSession()">
+                Close Register
+            </DropdownItem>
+            <DropdownItem t-if="this.env.debug" onSelected="() => this.clearCache()">
+                Clear Cache
+            </DropdownItem>
+            <DropdownItem t-if="this.env.debug" onSelected="() => debug.toggleWidget()">
+                Debug Window
+            </DropdownItem>
+        </xpath>
+    </t>
+</templates>

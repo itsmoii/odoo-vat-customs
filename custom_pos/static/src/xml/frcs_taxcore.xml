@@ -13,7 +13,9 @@
             <button class="button next validation btn btn-success btn-lg w-75 py-3 lh-lg my-custom-class"
                 t-attf-class="{{ currentOrder.is_paid() and currentOrder._isValidEmptyOrder() ? 'highlight' : 'disabled'}}"
                 t-on-click="() => this.validateOrder()">
-                <span class="next_text">CONFIRM SALE</span>
+                <span class="next_text">
+                    <t t-esc="pos.proformaMode ? 'PROFORMA SALE':'CONFIRM SALE'"/>
+                </span>
             </button>
         </xpath>
     

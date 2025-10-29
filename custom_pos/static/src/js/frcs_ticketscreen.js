@@ -1,23 +1,13 @@
 import { TicketScreen } from "@point_of_sale/app/screens/ticket_screen/ticket_screen";
 import { patch } from "@web/core/utils/patch";
 import { ActionpadWidget } from "@point_of_sale/app/screens/product_screen/action_pad/action_pad";
+import { sendToTaxcore } from "./frcs_service";
 
 
 patch (TicketScreen.prototype, {
 
     getCashier(order) {
         return order.user_id?.name;
-    },
-
-    _getReplicaDetails(partner, order){
-        return Object.values(this.pos.getLinesToRefund).filter(
-            (duplicate) =>
-                !this.pos.isProductQtyZero(duplicate.qty) &&
-                duplicate.line.order_id.uuid === order.uuid &&
-                (partner ? duplicate.line.order_id.partner_id?.id === partner.id : true) &&
-                !duplicate.destination_order_id
-        )
-
     },
 
     async onReprint() {
@@ -33,11 +23,17 @@ patch (TicketScreen.prototype, {
         }
 
         //Prepare payload to send to TaxCore
-        const invoiceId = await this.rpc ({
-            model: "pos.order.fiscal.record",
-            method: "get_invoice_number",
-            args: [order.id],
-        })
+        const invoiceId = await this.pos.data.call (
+            "pos.order.fiscal.record",
+            "get_invoice_number",
+            [order.id]
+        );
+
+        const referentDocumentDT = await this.pos.data.call (
+            "pos.order.fiscal.record",
+            "get_created_time",
+            [order.id]
+        );
 
         if (!invoiceId) {
             this.notification.add (
@@ -48,8 +44,83 @@ patch (TicketScreen.prototype, {
             return;
         }
 
+        const sdcInvoice = await this.pos.data.call (
+            "pos.order.fiscal.record",
+            "get_sdc_invoice",
+            [order.id]
+        )
+
+
+        let invoicePayload;
+
+        const items = order.get_orderlines().map((line) => ({
+            GTIN: line.product?.barcode || null,
+            Name: line.get_full_product_name() || "Item",
+            Quantity: Math.abs(line.get_quantity()),
+            Discount: line.get_discount(),
+            Labels: line.product?.taxes_id?.map((tax) => tax.name).filter(Boolean) || ["A"],
+            TotalAmount: Math.abs(line.get_price_with_tax()),
+        }));
+
+        try{
+
+            invoicePayload = {
+                DateAndTimeOfIssue: new Date().toISOString(),
+                Cashier: this.pos.get_cashier().name,
+                BD: null,
+                BuyerCostCenterId: null,
+                IT:"Copy",
+                TT: "Sale",
+                paymentType: "Cash",
+                //payment: paymentTypes,
+                InvoiceNumber: "22222",
+                ReferentDocumentNumber: sdcInvoice,
+                ReferentDocumentDT: referentDocumentDT,
+                PAC: "3AYVNZ",
+                Options: {
+                    OmitTextualRepresentation: 0,
+                    OmitQRCodeGen: 0,
+                },
+                Items: items,
+            };
+
+        } catch (err) {
+            console.error("Taxcore validation failed: ", err);
+        } 
+
+        const response = await sendToTaxcore({ pos: this.pos, payload:invoicePayload });
+        order.setTaxCoreResponse(response);
+
+        if (this.pos.get_order().uuid !== order.uuid) {
+            this.pos.set_order(order);
+        }
+
+        this.pos.showScreen("ReceiptScreen");
+
 
     
+    },
+
+    getOrderInvoiceLabel(order){
+
+        const invoiceLabel = this.pos.data.call (
+            "pos.order.fiscal.record",
+            "get_invoice_label",
+            [order.id]
+        );
+
+        if (!invoiceLabel) {
+            this.dialog.add(ConfirmationDialog, {
+                title: _t("Invoice Label"),
+                body: _t("No invoice label found for this order Id"),
+                confirmLabel: _t("OK"),
+            })
+
+            return;
+        }
+
+        return invoiceLabel;
+
     },
 
 });

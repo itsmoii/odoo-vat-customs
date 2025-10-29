@@ -57,11 +57,10 @@ export async function sendToTaxcore({
     return await new Promise((resolve, reject) => {
         const handler = (event) => {
             try {
-                const data = JSON.parse(event.data);
-                const response = data.response || data;
-
+                const payload = JSON.parse(event.data);
+                const response = payload.response || payload;
                 invoiceOutput.value = JSON.stringify(response, null, 4);
-                resolve(response);
+                resolve(response || payload.response);
             } catch (error) {
                 reject(new Error(`Invalid TaxCore response: ${event.data}`));
             } finally {

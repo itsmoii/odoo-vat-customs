@@ -97,7 +97,7 @@
                                             <div><t t-esc="getTotal(order)"></t></div>
                                         </div>
                                         <div class="col wide p-2">
-                                            <div><t t-esc="getStatus(order)"></t></div>
+                                            <div><t t-esc="order.invoice_label"></t></div>
                                         </div>
                                         <div t-if="!shouldHideDeleteButton(order)" class="col very-narrow delete-button p-2" name="delete" t-on-click.stop="() => this.pos.onDeleteOrder(order)">
                                             <i class="fa fa-trash" aria-hidden="true"/>
