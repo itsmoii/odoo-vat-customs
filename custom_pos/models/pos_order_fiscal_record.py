@@ -52,6 +52,8 @@ class PosOrder(models.Model):
         sdcInvoice = order.pop("sdc_invoice")
         invLabel = order.pop("invoice_label")
         order_id = super()._process_order(order, existing_order)
+        order_rec = self.browse(order_id)
+        
         if payload:
             self.env["pos.order.fiscal.record"].create({
                 "order_id": order_id,
@@ -60,4 +62,5 @@ class PosOrder(models.Model):
                 "sdc_invoice": sdcInvoice,
                 "invoice_label": invLabel,
             })
+            order_rec.taxcore_journal = payload 
         return order_id

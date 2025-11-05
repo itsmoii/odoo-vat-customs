@@ -18,7 +18,7 @@
             "custom_pos/static/src/js/frcs_refund.js",
             "custom_pos/static/src/js/frcs_ticketscreen.js",
             "custom_pos/static/src/js/frcs_navbar.js",
-            "custom_pos/static/src/js/proforma_order.js",
+            "custom_pos/static/src/js/frcs_order.js",
             "custom_pos/static/src/xml/frcs_taxcore.xml",
             "custom_pos/static/src/xml/frcs_ticketscreen.xml",
             "custom_pos/static/src/xml/frcs_receiptscreen.xml",
@@ -32,7 +32,7 @@
             "custom_pos/static/src/js/frcs_refund.js",
             "custom_pos/static/src/js/frcs_ticketscreen.js",
             "custom_pos/static/src/js/frcs_navbar.js",
-            "custom_pos/static/src/js/proforma_order.js",
+            "custom_pos/static/src/js/frcs_order.js",
             "custom_pos/static/src/xml/frcs_taxcore.xml",
             "custom_pos/static/src/xml/frcs_ticketscreen.xml",
             "custom_pos/static/src/xml/frcs_receiptscreen.xml",
@@ -49,5 +49,5 @@
 
     },
     'installable': True,
-    'application': True,
+    'application': True
 }

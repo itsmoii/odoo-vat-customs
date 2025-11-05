@@ -6,6 +6,9 @@ patch(PosOrder.prototype, {
     setup(vals){
         super.setup(vals);
         this.is_proforma = vals.is_proforma || false;
+        this.is_training = vals.is_proforma || false;
+        this.is_advance = vals.is_advance || false; 
+
     },
 
     setIsProforma(v){
@@ -14,5 +17,21 @@ patch(PosOrder.prototype, {
 
     isProforma(){
         return !!this.is_proforma;
+    },
+
+    setIsTraining(v){
+        this.is_training = !!v;
+    },
+
+    isTraining(){
+        return !!this.is_training;
+    },
+
+    setIsAdvance(v){
+        this.is_advance = !!v;
+    },
+    
+    isAdvance(){
+        return !!this.is_advance;
     },
 });

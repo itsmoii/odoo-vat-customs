@@ -14,7 +14,16 @@
                 t-attf-class="{{ currentOrder.is_paid() and currentOrder._isValidEmptyOrder() ? 'highlight' : 'disabled'}}"
                 t-on-click="() => this.validateOrder()">
                 <span class="next_text">
-                    <t t-esc="pos.proformaMode ? 'PROFORMA SALE':'CONFIRM SALE'"/>
+                    <t t-if="pos.proformaMode">
+                        PROFORMA SALE
+                    </t>
+                    <t t-elif="pos.trainingMode">
+                        TRAINING SALE
+                    </t>
+                    <t t-else="">
+                        CONFIRM SALE
+                    </t>
+                   
                 </span>
             </button>
         </xpath>

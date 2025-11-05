@@ -3,6 +3,8 @@ import { patch } from "@web/core/utils/patch";
 import { PaymentScreen } from "@point_of_sale/app/screens/payment_screen/payment_screen";
 import { PosOrder } from "@point_of_sale/app/models/pos_order";
 import { sendToTaxcore } from "./frcs_service";
+import { _t } from "@web/core/l10n/translation";
+
 
 const DEFAULT_LABEL = ["A"];
 
@@ -16,6 +18,11 @@ patch(PaymentScreen.prototype, {
         if (this.pos.proformaMode) {
             await this._ensureProformaLine();
         }
+
+        if (this.pos.trainingMode){
+            await this._ensureTrainingLine();
+        }
+
     },
 
     async _ensureProformaLine(){
@@ -52,10 +59,52 @@ patch(PaymentScreen.prototype, {
             }
         }
     },
+
+    async _ensureTrainingLine(){
+        const order = this.currentOrder;
+        if (!order) return;
+
+        order.setIsTraining?.(true);
+
+        const pm = this.pos.models["pos.payment.method"].find((m) =>
+        m.name === "Training");
+
+        if (!pm){
+            this.notification.add(
+                _t('Create a payment method named "Training" and add it to the POS config.'),
+                { type: "warning"});
+
+            return;
+        }
+
+        // Remove previous Proforma line
+        for (const line of order.paymentlines || []) {
+            if (line.payment_method?.id === pm.id) {
+                order.remove_paymentline(line);
+            }
+        }
+
+        // Add a line that equals current due
+        const added = await this.addNewPaymentLine(pm);
+        if (added) {
+            const lines = order.paymentlines || [];
+            const lastline = lines [lines.length -1];
+            if(lastline){
+                lastline.set_amount(order.get_total_with_tax() - order.get_rounding_applied());
+            }
+        }
+    },
+
+
     async validateOrder(isForce) {
         if (this.pos.proformaMode) {
             await this._ensureProformaLine();
             this.currentOrder.setIsProforma(true);
+        }
+
+        if (this.pos.trainingMode) {
+            await this._ensureTrainingLine();
+            this.currentOrder.setIsTraining(true);
         }
 
         return await super.validateOrder(isForce);
@@ -71,7 +120,9 @@ patch(PaymentScreen.prototype, {
         const isRefund = hasRefundLines;
         console.log("OVERRRR HEREEEE:" + isRefund);
 
+        const isAdvance = this.pos.advanceMode || order.isAdvance?.();
         const isProforma = this.pos.proformaMode || order.isProforma?.();
+        const isTraining = this.pos.trainingMode || order.isTraining?.();
 
 
         const invoiceInput = document.getElementById("invoiceInput");
@@ -90,10 +141,16 @@ patch(PaymentScreen.prototype, {
         if (isRefund){
             invoice_type = invoiceType[0];
             transaction_type = transactionType[1];
-        } else if(isProforma){
+        } else if (isAdvance){
+            invoice_type = invoiceType[5];
+            transaction_type = transactionType[0];
+        }else if(isProforma){
             invoice_type = invoiceType[4];
             transaction_type = transactionType[0];
-        } else {
+        } else if(isTraining){
+            invoice_type = invoiceType[3];
+            transaction_type = transactionType[0];
+        }else {
             invoice_type = invoiceType[0];
             transaction_type = transactionType[0];
         }
@@ -162,7 +219,7 @@ patch(PaymentScreen.prototype, {
                 paymentType: "Cash",
                 //payment: paymentTypes,
                 InvoiceNumber: invoice_num,
-                ReferentDocumentNumber: "9A2PAXC4-XLNZ9VO0-70",
+                ReferentDocumentNumber: "",
                 PAC: "3AYVNZ",
                 Options: {
                     OmitTextualRepresentation: 0,
@@ -184,23 +241,44 @@ patch(PaymentScreen.prototype, {
         order.setSDCInvoice(taxcoreResponse.IN);
         order.setInvoiceLabel(invoice_label);
 
-        if (journal) {
-            if (typeof order.id !== "number") {
-                await this.pos.data.syncData(); 
-            }
-            if (typeof order.id === "number") {
-                await this.pos.data.execute({
-                    type: "write",
-                    model: "pos.order",
-                    ids: [order.id],
-                    values: { taxcore_journal: journal },
-                });
-            }
+        const result = await super._finalizeValidation(...arguments); 
+
+        let backendId = typeof order.id === "number" ? order.id : undefined;
+        if (!backendId) {
+            await this.pos.data.syncData();
+            backendId = typeof order.id === "number" ? order.id : undefined;
         }
+        if (!backendId) {
+            console.warn("No backend order id yet; skipping print job");
+            return result;
+        }
+        
+            
+
+        if (journal) {
+            await this.pos.data.execute({
+                type: "write",
+                model: "pos.order",
+                ids: [backendId],
+                values: { taxcore_journal: JSON.stringify(journal) },
+            });
 
 
+            // await this.pos.data.call(
+            //     "pos.order",
+            //     "action_pos_order_paid",
+            //     [backendId]
+            // );
 
-        return super._finalizeValidation(...arguments);
+            // await this.pos.data.call(
+            //     "pos.print.job",
+            //     "cron_process_jobs",
+            //     []
+            // );
+        
+            
+        }
+        return result;
     },
 });
 
