@@ -182,8 +182,8 @@
           <field name="frcs_gtin" string="GTIN"/>
           <field name="barcode"/>
           <separator/>
-          <filter name="tax0" string="Tax 0%" domain="[('x_sale_tax_id.amount','=',0.0)]"/>
-          <filter name="tax125" string="Tax 12.5%" domain="[('x_sale_tax_id.amount','=',12.5)]"/>
+          <filter name="tax0" string="Tax 0%" domain="[('x_sale_tax_rate','=',0.0)]"/>
+          <filter name="tax125" string="Tax 12.5%" domain="[('x_sale_tax_rate','=',12.5)]"/>
           <filter name="expired" string="Expired" domain="[('x_is_expired','=',True)]"/>
           <filter name="expiring_soon" string="Expiring Soon" domain="[('x_is_expiring_soon','=',True)]"/>
           <separator/>

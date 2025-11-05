@@ -1,12 +1,15 @@
 from odoo import api, SUPERUSER_ID
 
 
-def post_init_setup(cr, registry):
+def post_init_setup(env_or_cr, registry=None):
     """
     Fiji bootstrap: ensure a CoA is installed, set company to Fiji + FJD,
     create/link FRCS VAT taxes, and attach POS payment methods.
     """
-    env = api.Environment(cr, SUPERUSER_ID, {})
+    if isinstance(env_or_cr, api.Environment):
+        env = env_or_cr
+    else:
+        env = api.Environment(env_or_cr, SUPERUSER_ID, {})
     company = env.company
 
     # 1) Set company country to Fiji and currency to FJD if available
@@ -136,12 +139,15 @@ def post_init_setup(cr, registry):
             if not getattr(tx, 'frcs_label', False):
                 tx.frcs_label = label
 
-def pre_init_cleanup(cr):
+def pre_init_cleanup(env_or_cr):
     """Before loading XML, rename legacy taxes defined by other modules that
     would clash on unique names (e.g., FRCS VAT 0% (Sales)). This frees names
     so our canonical l10n_fj_minicoa taxes can be created safely.
     """
-    env = api.Environment(cr, SUPERUSER_ID, {})
+    if isinstance(env_or_cr, api.Environment):
+        env = env_or_cr
+    else:
+        env = api.Environment(env_or_cr, SUPERUSER_ID, {})
     imd = env['ir.model.data']
     # First, rename known legacy taxes created by our other modules
     legacy_ids = imd.search([
@@ -151,7 +157,8 @@ def pre_init_cleanup(cr):
     ])
     to_rename_set = {
         'FRCS VAT 0% (Sales)', 'FRCS VAT 12.5% (Sales)', 'FRCS VAT 15% (Sales)', 'FRCS VAT 9% (Sales)',
-        'FRCS VAT 0% (Purchase)', 'FRCS VAT 12.5% (Purchase)'
+        'FRCS VAT 0% (Purchase)', 'FRCS VAT 12.5% (Purchase)',
+        'VAT 12.5% (Sales)', 'VAT 0% (Sales)', 'VAT 12.5% (Purchase)', 'VAT 0% (Purchase)',
     }
     for rec in legacy_ids:
         tax = env['account.tax'].browse(rec.res_id)
@@ -198,19 +205,24 @@ def pre_init_cleanup(cr):
             if g:
                 chosen = g
                 break
-    if chosen:
-        imd_rec = imd.search([
-            ('module', '=', 'l10n_fj_minicoa'),
-            ('name', '=', 'tax_group_vat'),
-            ('model', '=', 'account.tax.group'),
-        ], limit=1)
-        if imd_rec:
-            imd_rec.res_id = chosen.id
-        else:
-            imd.create({
-                'module': 'l10n_fj_minicoa',
-                'name': 'tax_group_vat',
-                'model': 'account.tax.group',
-                'res_id': chosen.id,
-                'noupdate': True,
-            })
+    if not chosen:
+        chosen = Group.create({
+            'name': 'FRCS VAT',
+            'country_id': env.ref('base.fj').id if env.ref('base.fj', raise_if_not_found=False) else False,
+        })
+
+    imd_rec = imd.search([
+        ('module', '=', 'l10n_fj_minicoa'),
+        ('name', '=', 'tax_group_vat'),
+        ('model', '=', 'account.tax.group'),
+    ], limit=1)
+    if imd_rec:
+        imd_rec.res_id = chosen.id
+    else:
+        imd.create({
+            'module': 'l10n_fj_minicoa',
+            'name': 'tax_group_vat',
+            'model': 'account.tax.group',
+            'res_id': chosen.id,
+            'noupdate': True,
+        })

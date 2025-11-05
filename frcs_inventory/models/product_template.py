@@ -132,20 +132,23 @@ class ProductTemplate(models.Model):
             res['type'] = 'product'
         return res
 
-    @api.model
-    def create(self, vals):
-        # Ensure created products default to Goods
-        vals.setdefault('type', 'product')
-        # Block past expiry dates on create
-        if vals.get('x_expiry_date'):
-            from datetime import date as _date
-            try:
-                new_dt = fields.Date.to_date(vals['x_expiry_date'])
-            except Exception:
-                new_dt = vals['x_expiry_date']
-            if new_dt and new_dt < _date.today():
-                raise ValidationError(_("Expiry date cannot be in the past."))
-        return super().create(vals)
+    @api.model_create_multi
+    def create(self, vals_list):
+        from datetime import date as _date
+
+        for vals in vals_list:
+            # Ensure created products default to Goods
+            vals.setdefault('type', 'product')
+            # Block past expiry dates on create
+            expiry = vals.get('x_expiry_date')
+            if expiry:
+                try:
+                    expiry_date = fields.Date.to_date(expiry)
+                except Exception:
+                    expiry_date = expiry
+                if expiry_date and expiry_date < _date.today():
+                    raise ValidationError(_("Expiry date cannot be in the past."))
+        return super().create(vals_list)
 
     def write(self, vals):
         # Allow callers (e.g., recompute mirrors / bulk ops) to bypass tax sync
@@ -210,7 +213,7 @@ class ProductTemplate(models.Model):
                 continue
             if not rec.product_variant_id:
                 # Ensure a variant exists
-                rec.flush()
+                rec._create_variant_ids()
             product = rec.product_variant_id
             if not product:
                 continue
