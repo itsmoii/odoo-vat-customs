@@ -12,6 +12,9 @@ patch (TicketScreen.prototype, {
 
     async onReprint() {
         const order = this.getSelectedOrder();
+        const isRefund = order?.getHasRefundLines?.() || false;
+
+        console.log("COPY RFUNNDDDDD" + isRefund);
 
         if (!order) {
             this.notification.add(
@@ -58,9 +61,21 @@ patch (TicketScreen.prototype, {
             Name: line.get_full_product_name() || "Item",
             Quantity: Math.abs(line.get_quantity()),
             Discount: line.get_discount(),
-            Labels: line.product?.taxes_id?.map((tax) => tax.name).filter(Boolean) || ["A"],
+            Labels: line.product?.taxes_id?.map((tax) => tax.name).filter(Boolean) || ["G"],
             TotalAmount: Math.abs(line.get_price_with_tax()),
         }));
+
+        
+        let transactionType;
+
+        if (isRefund){
+            transactionType = "Refund";
+        } else {
+            transactionType = "Sale";
+        }
+
+
+
 
         try{
 
@@ -70,7 +85,7 @@ patch (TicketScreen.prototype, {
                 BD: null,
                 BuyerCostCenterId: null,
                 IT:"Copy",
-                TT: "Sale",
+                TT: transactionType,
                 paymentType: "Cash",
                 //payment: paymentTypes,
                 InvoiceNumber: "22222",

@@ -49,7 +49,7 @@ class PosOrder(models.Model):
     def _process_order(self, order, existing_order):
         payload = order.pop("taxcore_payload")
         invoiceNum = order.pop("invoice_number")
-        sdcInvoice = order.pop("sdc_invoice")
+        sdcInvoice = order.pop("sdc_invoice", False)
         invLabel = order.pop("invoice_label")
         order_id = super()._process_order(order, existing_order)
         order_rec = self.browse(order_id)

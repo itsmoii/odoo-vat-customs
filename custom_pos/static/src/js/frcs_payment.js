@@ -6,7 +6,7 @@ import { sendToTaxcore } from "./frcs_service";
 import { _t } from "@web/core/l10n/translation";
 
 
-const DEFAULT_LABEL = ["A"];
+const DEFAULT_LABEL = ["G"];
 
 
 // Sending data to TaxCore
@@ -133,31 +133,60 @@ patch(PaymentScreen.prototype, {
             return result;
         }
 
+            const originalOrder =
+            this.currentOrder
+                .get_orderlines()
+                .map((line) => line.refunded_orderline_id?.order_id)
+                .find(Boolean);
+
+            const refundId =
+            originalOrder && typeof originalOrder.id === "number"
+                ? originalOrder.id
+                : null;
+
+            console.log("REFUNDDDD ORDER IDDDD" + refundId);
+
+            const sdcInvoice = await this.pos.data.call (
+                "pos.order.fiscal.record",
+                "get_sdc_invoice",
+                [refundId]
+            )
+
+     
+
         const invoiceType = ["Normal", "Refund", "Copy", "Training", "Proforma", "Advance"];
         const transactionType = ["Sale", "Refund"];
         let transaction_type;
         let invoice_type;
+        let sdc_invoice;
+
 
         if (isRefund){
             invoice_type = invoiceType[0];
             transaction_type = transactionType[1];
+            sdc_invoice = sdcInvoice;
+
         } else if (isAdvance){
             invoice_type = invoiceType[5];
             transaction_type = transactionType[0];
+            sdc_invoice ="";
         }else if(isProforma){
             invoice_type = invoiceType[4];
             transaction_type = transactionType[0];
+            sdc_invoice ="";
         } else if(isTraining){
             invoice_type = invoiceType[3];
             transaction_type = transactionType[0];
+            sdc_invoice ="";
         }else {
             invoice_type = invoiceType[0];
             transaction_type = transactionType[0];
+            sdc_invoice ="";
         }
 
         const items = order.get_orderlines().map((line) => {
             const labels =
-                line.product?.taxes_id?.map((tax) => tax.name).filter(Boolean) || [];
+                line.product?.product_template?.frcs_tax_label.map((tax) => tax.name).filter(Boolean) || [];
             if (!labels.length) {
                 labels.push(...DEFAULT_LABEL);
             }
@@ -166,6 +195,8 @@ patch(PaymentScreen.prototype, {
             
             const discount = line.get_discount();
             console.log("DISCOUNTTTTT:" + discount);
+            
+
 
             if (transaction_type == transactionType[1]){
                 quantity = Math.abs(line.get_quantity());
@@ -219,7 +250,8 @@ patch(PaymentScreen.prototype, {
                 paymentType: "Cash",
                 //payment: paymentTypes,
                 InvoiceNumber: invoice_num,
-                ReferentDocumentNumber: "",
+                ReferentDocumentNumber:sdc_invoice,
+                ReferentDocumentDT: "",
                 PAC: "3AYVNZ",
                 Options: {
                     OmitTextualRepresentation: 0,
@@ -264,17 +296,17 @@ patch(PaymentScreen.prototype, {
             });
 
 
-            // await this.pos.data.call(
-            //     "pos.order",
-            //     "action_pos_order_paid",
-            //     [backendId]
-            // );
+            await this.pos.data.call(
+                "pos.order",
+                "action_pos_order_paid",
+                [backendId]
+            );
 
-            // await this.pos.data.call(
-            //     "pos.print.job",
-            //     "cron_process_jobs",
-            //     []
-            // );
+            await this.pos.data.call(
+                "pos.print.job",
+                "cron_process_jobs",
+                []
+            );
         
             
         }

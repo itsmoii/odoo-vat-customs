@@ -1,0 +1,27 @@
+{
+    'name': 'Fiji Mini Chart of Accounts (FRCS)',
+    'summary': 'Fiji fiscal localization: Mini CoA and FRCS VAT configuration',
+    'version': '1.0.6',
+    'author': 'Asifa Hanif',
+    'license': 'LGPL-3',
+    'category': 'Accounting/Localizations/Account Charts',
+    'countries': ['fj'],
+    'depends': [
+        'account',
+    ],
+    'data': [
+        # --- Core data files ---
+        'data/frcs_tax_group.xml',
+        'data/taxes.xml',
+        'data/res_currency_data.xml',
+        'views/menu.xml',
+        
+    ],
+
+    'demo': [],
+    'installable': True,
+    'application': False,
+    'auto_install': False,
+    'post_init_hook': 'post_init_setup',
+    # Hooks removed: tax data now lives in frcs_inventory
+}
