@@ -29,7 +29,8 @@
 "fj_40520","40520","Sales - Health & Beauty","income","","","False",""
 "fj_40530","40530","Sales - Baby Products","income","","","False",""
 "fj_40540","40540","Sales - Cleaning Supplies","income","","","False",""
-
+"fj_70200","70200","POS Card Control","asset_current","","","False",""
+"fj_70100","70100","POS Cash Control","asset_current","","","False",""
 "fj_51100","51100","COGS - Beverages","expense","","","False",""
 "fj_51200","51200","COGS - Snacks & Confectionery","expense","","","False",""
 "fj_51300","51300","COGS - Produce","expense","","","False",""
@@ -45,7 +46,8 @@
 "fj_51530","51530","COGS - Baby Products","expense","","","False",""
 "fj_51540","51540","COGS - Cleaning Supplies","expense","","","False",""
 "fj_51900","51900","COGS - Other","expense","","","False",""
-
+"fj_70200","70200","POS Card Control","asset_current","","","False",""
+"fj_70100","70100","POS Cash Control","asset_current","","","False",""
 "fj_12010","12010","Inventory - Beverages","asset_current","","","False",""
 "fj_12020","12020","Inventory - Snacks & Confectionery","asset_current","","","False",""
 "fj_12030","12030","Inventory - Produce","asset_current","","","False",""

@@ -159,13 +159,13 @@ class ProductTemplate(models.Model):
         res = super().default_get(fields_list)
         if 'type' in fields_list and not res.get('type'):
             # Force default to Goods
-            res['type'] = 'product'
+            res['type'] = 'consu'
         return res
 
     @api.model
     def create(self, vals):
         # Ensure created products default to Goods
-        vals.setdefault('type', 'product')
+        vals.setdefault('type', 'consu')
         # Block past expiry dates on create
         if vals.get('x_expiry_date'):
             from datetime import date as _date
@@ -182,7 +182,7 @@ class ProductTemplate(models.Model):
         if self.env.context.get('skip_tax_sync'):
             return super().write(vals)
         # Disallow switching away from Goods via UI or API
-        if 'type' in vals and vals.get('type') not in (False, 'product'):
+        if 'type' in vals and vals.get('type') not in (False, 'consu'):
             raise ValidationError(_("Only 'Goods' product type is allowed."))
         # Block past expiry dates on write
         if 'x_expiry_date' in vals:
@@ -240,7 +240,7 @@ class ProductTemplate(models.Model):
                 continue
             if not rec.product_variant_id:
                 # Ensure a variant exists
-                rec.flush()
+                rec.flush_recordset()
             product = rec.product_variant_id
             if not product:
                 continue

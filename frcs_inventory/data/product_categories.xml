@@ -17,104 +17,78 @@
       <field name="name">Dairy</field>
       <field name="parent_id" ref="frcs_categ_root"/>
       
-      <field name="property_stock_account_input_categ_id" ref="l10n_fj_minicoa.stock_in"/>
-      <field name="property_stock_account_output_categ_id" ref="l10n_fj_minicoa.stock_out"/>
     </record>
 
     <record id="frcs_categ_snacks" model="product.category">
       <field name="name">Snacks</field>
       <field name="parent_id" ref="frcs_categ_root"/>
       
-      <field name="property_stock_account_input_categ_id" ref="l10n_fj_minicoa.stock_in"/>
-      <field name="property_stock_account_output_categ_id" ref="l10n_fj_minicoa.stock_out"/>
     </record>
 
     <record id="frcs_categ_meat" model="product.category">
       <field name="name">Meat</field>
       <field name="parent_id" ref="frcs_categ_root"/>
       
-      <field name="property_stock_account_input_categ_id" ref="l10n_fj_minicoa.stock_in"/>
-      <field name="property_stock_account_output_categ_id" ref="l10n_fj_minicoa.stock_out"/>
     </record>
 
     <record id="frcs_categ_vegetables" model="product.category">
       <field name="name">Vegetables</field>
       <field name="parent_id" ref="frcs_categ_root"/>
       
-      <field name="property_stock_account_input_categ_id" ref="l10n_fj_minicoa.stock_in"/>
-      <field name="property_stock_account_output_categ_id" ref="l10n_fj_minicoa.stock_out"/>
     </record>
 
     <record id="frcs_categ_fruits" model="product.category">
       <field name="name">Fruits</field>
       <field name="parent_id" ref="frcs_categ_root"/>
       
-      <field name="property_stock_account_input_categ_id" ref="l10n_fj_minicoa.stock_in"/>
-      <field name="property_stock_account_output_categ_id" ref="l10n_fj_minicoa.stock_out"/>
     </record>
 
     <record id="frcs_categ_bakery" model="product.category">
       <field name="name">Bakery</field>
       <field name="parent_id" ref="frcs_categ_root"/>
       
-      <field name="property_stock_account_input_categ_id" ref="l10n_fj_minicoa.stock_in"/>
-      <field name="property_stock_account_output_categ_id" ref="l10n_fj_minicoa.stock_out"/>
     </record>
 
     <record id="frcs_categ_frozen" model="product.category">
       <field name="name">Frozen Foods</field>
       <field name="parent_id" ref="frcs_categ_root"/>
       
-      <field name="property_stock_account_input_categ_id" ref="l10n_fj_minicoa.stock_in"/>
-      <field name="property_stock_account_output_categ_id" ref="l10n_fj_minicoa.stock_out"/>
     </record>
 
     <record id="frcs_categ_household" model="product.category">
       <field name="name">Household</field>
       <field name="parent_id" ref="frcs_categ_root"/>
       
-      <field name="property_stock_account_input_categ_id" ref="l10n_fj_minicoa.stock_in"/>
-      <field name="property_stock_account_output_categ_id" ref="l10n_fj_minicoa.stock_out"/>
     </record>
 
     <record id="frcs_categ_toiletries" model="product.category">
       <field name="name">Toiletries</field>
       <field name="parent_id" ref="frcs_categ_root"/>
       
-      <field name="property_stock_account_input_categ_id" ref="l10n_fj_minicoa.stock_in"/>
-      <field name="property_stock_account_output_categ_id" ref="l10n_fj_minicoa.stock_out"/>
     </record>
 
     <record id="frcs_categ_baby" model="product.category">
       <field name="name">Baby Products</field>
       <field name="parent_id" ref="frcs_categ_root"/>
       
-      <field name="property_stock_account_input_categ_id" ref="l10n_fj_minicoa.stock_in"/>
-      <field name="property_stock_account_output_categ_id" ref="l10n_fj_minicoa.stock_out"/>
     </record>
 
     <record id="frcs_categ_health" model="product.category">
       <field name="name">Health &amp; Beauty</field>
       <field name="parent_id" ref="frcs_categ_root"/>
       
-      <field name="property_stock_account_input_categ_id" ref="l10n_fj_minicoa.stock_in"/>
-      <field name="property_stock_account_output_categ_id" ref="l10n_fj_minicoa.stock_out"/>
     </record>
 
     <record id="frcs_categ_cleaning" model="product.category">
       <field name="name">Cleaning Supplies</field>
       <field name="parent_id" ref="frcs_categ_root"/>
       
-      <field name="property_stock_account_input_categ_id" ref="l10n_fj_minicoa.stock_in"/>
-      <field name="property_stock_account_output_categ_id" ref="l10n_fj_minicoa.stock_out"/>
     </record>
 
     <record id="frcs_categ_others" model="product.category">
       <field name="name">Others</field>
       <field name="parent_id" ref="frcs_categ_root"/>
       
-      <field name="property_stock_account_input_categ_id" ref="l10n_fj_minicoa.stock_in"/>
-      <field name="property_stock_account_output_categ_id" ref="l10n_fj_minicoa.stock_out"/>
     </record>
   </data>
 </odoo>

@@ -2,14 +2,7 @@
 <templates id="template" xml:space="preserve">
 
     <t t-inherit="point_of_sale.PaymentScreenValidate" t-inherit-mode="extension" owl="1">
-        <xpath expr="//t[@t-if='ui.isSmall']/button" position="replace">
-            <button class="btn-switchpane validation-button btn btn-success btn-lg flex-fill py-3 lh-lg my-custom-class"
-                t-att-class="{ secondary: !(currentOrder.is_paid() and currentOrder._isValidEmptyOrder()) }"
-                t-on-click="() => this.validateOrder()">
-                <span>Confirm (mobile)</span>
-            </button>
-        </xpath>
-        <xpath expr="//t[@t-else='']/button" position="replace">
+        <xpath expr="//button[contains(@class, 'validation-button')]" position="replace">
             <button class="button next validation btn btn-success btn-lg w-75 py-3 lh-lg my-custom-class"
                 t-attf-class="{{ currentOrder.is_paid() and currentOrder._isValidEmptyOrder() ? 'highlight' : 'disabled'}}"
                 t-on-click="() => this.validateOrder()">

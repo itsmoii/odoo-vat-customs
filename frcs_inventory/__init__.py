@@ -1,11 +1,7 @@
 
 from . import controllers
 from . import models
+from . import hooks
 
-# Expose post_init_hook for the manifest
-try:
-    from .hooks import post_init_hook  # noqa: F401
-except Exception:
-    # Keep module import resilient even if hooks change
-    post_init_hook = None
+post_init_hook = hooks.post_init_hook  
  

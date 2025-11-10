@@ -8,6 +8,7 @@
     'countries': ['fj'],
     'depends': [
         'account',
+        'account_payment',
     ],
     'data': [
         # --- Core data files ---
@@ -22,6 +23,7 @@
     'installable': True,
     'application': False,
     'auto_install': False,
+    'pre_init_hook': 'pre_init_hook',
     'post_init_hook': 'post_init_setup',
     # Hooks removed: tax data now lives in frcs_inventory
 }
