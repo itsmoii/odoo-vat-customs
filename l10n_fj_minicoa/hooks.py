@@ -7,23 +7,10 @@ _logger = logging.getLogger(__name__)
 # 1) PRE-INIT (optional)
 # -------------------------
 def pre_init_hook(cr_or_env):
-    """Run before XML data loads — removes any leftover duplicates early."""
+    """Run before XML data loads — clean up duplicate Fiji taxes early."""
     # Handle both cases: env or cursor (for compatibility)
     cr = getattr(cr_or_env, 'cr', cr_or_env)
     env = api.Environment(cr, SUPERUSER_ID, {})
-    POSPay = env['pos.payment.method']
-    linked = POSPay.search([])
-
-    # Unlink journals and outstanding accounts
-    linked.write({
-        'journal_id': False,
-        'outstanding_account_id': False,
-        'receivable_account_id': False,  
-    })
-
-    env.cr.commit()
-    _logger = env['ir.logging']
-    print("✅ Pre-init cleanup done: detached POS payment methods from journals/accounts.")
     Tax = env['account.tax']
     Company = env['res.company']
 
@@ -48,12 +35,19 @@ def post_init_setup(env_or_cr, registry=None):
     """Fiji post-install setup — runs after module install or update."""
     cr = getattr(env_or_cr, "cr", env_or_cr)
     env = api.Environment(cr, SUPERUSER_ID, {})
-    _logger.info("🇫🇯 Fiji post-install setup started")
+    _logger.info("Fiji post-install setup started")
+
 
     Company = env['res.company']
     Tax = env['account.tax']
     TaxGroup = env['account.tax.group']
     Account = env['account.account']
+    label_map = {
+        0.0: 'G',
+        9.0: 'B',
+        12.5: 'A',
+        15.0: 'A',
+    }
 
     # Helper: ensure one FRCS VAT tax group PER COMPANY
     def ensure_tax_group(company):
@@ -150,6 +144,10 @@ def post_init_setup(env_or_cr, registry=None):
                 normalize_repartition_lines(keep)
                 # Then assign accounts to the tax lines
                 set_tax_accounts(keep, acc_collected, acc_paid)
+                # Apply FRCS invoice label (A/B/G)
+                label = label_map.get(rate)
+                if label and keep.invoice_label != label:
+                    keep.invoice_label = label
 
         # Company defaults (pick the 12.5% ones if present, else 0%)
         sale_125 = Tax.search([('company_id', '=', company.id), ('type_tax_use', '=', 'sale'), ('amount', '=', 12.5)], limit=1)
@@ -162,4 +160,4 @@ def post_init_setup(env_or_cr, registry=None):
         if vals:
             company.write(vals)
 
-    _logger.info("🏁 Fiji post-install setup complete.")
+    _logger.info("Fiji post-install setup complete.")

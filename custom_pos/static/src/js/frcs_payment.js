@@ -185,11 +185,9 @@ patch(PaymentScreen.prototype, {
         }
 
         const items = order.get_orderlines().map((line) => {
-            const labels =
-                line.product?.product_template?.frcs_tax_label.map((tax) => tax.name).filter(Boolean) || [];
-            if (!labels.length) {
-                labels.push(...DEFAULT_LABEL);
-            }
+            const label = line.get_product()?.raw?.frcs_tax_label;
+            const labels = label ? [label] : DEFAULT_LABEL.slice();
+
             
             let quantity = line.get_quantity()
             

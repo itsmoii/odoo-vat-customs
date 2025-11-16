@@ -414,6 +414,25 @@ class ProductTemplate(models.Model):
                 # keep product taxes in sync for accounting/POS
                 rec.taxes_id = [(6, 0, [rec.x_sale_tax_id.id])]
 
+    @api.onchange('taxes_id')
+    def _onchange_taxes_id_sync_label(self):
+        for rec in self:
+            sale_tax = rec.taxes_id.filtered(lambda t: t.type_tax_use == 'sale')[:1]
+            if sale_tax:
+                label = getattr(sale_tax, 'label_on_invoice', False)
+                if not label and sale_tax.amount_type == 'percent':
+                    label_map = {
+                        15.0: 'A',
+                        12.5: 'A',
+                        9.0: 'E',
+                        0.0: 'F',
+                        0.25: 'P',
+                    }
+                    label = label_map.get(round(sale_tax.amount or 0.0, 2))
+                rec.frcs_tax_label = label
+            else:
+                rec.frcs_tax_label = False
+
     @api.constrains("frcs_gtin")
     def _check_frcs_gtin(self):
         for rec in self:

@@ -11,9 +11,9 @@
         'account_payment',
     ],
     'data': [
-        # --- Core data files ---
         'data/frcs_tax_group.xml',
         'data/taxes.xml',
+        'data/template/account.account-fj_minicoa.csv',
         'data/res_currency_data.xml',
         'views/menu.xml',
         
@@ -25,5 +25,4 @@
     'auto_install': False,
     'pre_init_hook': 'pre_init_hook',
     'post_init_hook': 'post_init_setup',
-    # Hooks removed: tax data now lives in frcs_inventory
 }

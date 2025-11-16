@@ -72,7 +72,7 @@
                                     <div class="col wide p-2" t-if="showCardholderName()">Cardholder Name</div>
                                     <div class="col p-2">Cashier</div>
                                     <div class="col end p-2">Total</div>
-                                    <div class="col wide p-2">Transaction Type</div>
+                                    <!-- <div class="col wide p-2">Transaction Type</div> -->
                                     <div class="col very-narrow p-2" name="delete"></div>
                                 </div>
                                 <t t-if="!ui.isSmall" t-foreach="_filteredOrderList" t-as="order" t-key="order.uuid">
@@ -96,9 +96,9 @@
                                         <div class="col end p-2">
                                             <div><t t-esc="getTotal(order)"></t></div>
                                         </div>
-                                        <div class="col wide p-2">
+                                        <!-- <div class="col wide p-2">
                                             <div><t t-esc="order.invoice_label"></t></div>
-                                        </div>
+                                        </div> -->
                                         <div t-if="!shouldHideDeleteButton(order)" class="col very-narrow delete-button p-2" name="delete" t-on-click.stop="() => this.pos.onDeleteOrder(order)">
                                             <i class="fa fa-trash" aria-hidden="true"/>
                                         </div>

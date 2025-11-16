@@ -13,6 +13,12 @@ class ProductProduct(models.Model):
         store=False,
     )
 
+    frcs_tax_label = fields.Selection(
+        related="product_tmpl_id.frcs_tax_label",
+        readonly=False, 
+        store=True,
+    )
+
     @api.depends('product_tmpl_id.x_total_price')
     def _compute_x_total_price(self):
         """Safely mirror total price for POS without triggering recursive writes.
