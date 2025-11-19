@@ -46,6 +46,10 @@
             "custom_pos/static/src/xml/frcs_actionpad.xml",
             "custom_pos/static/src/xml/frcs_navbar.xml",
         ],
+        'web.assets_backend': [
+            "custom_pos/static/src/js/frcs_fiscal_report.js",
+            "custom_pos/static/src/xml/frcs_fiscal_report.xml",
+        ],
 
     },
     'installable': True,

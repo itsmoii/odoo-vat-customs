@@ -1,4 +1,5 @@
 from odoo import fields, models, api
+from odoo.exceptions import UserError
 
 class PosOrderFiscalRecord(models.Model):
     _name = "pos.order.fiscal.record"
@@ -39,6 +40,169 @@ class PosOrderFiscalRecord(models.Model):
     def get_invoice_label(self, order_id):
         record = self.search([("order_id", "=", order_id)], limit=1)
         return record.invoice_label if record else False
+    
+    @api.model
+    def get_report_data(self, start_dt, end_dt, config_ids=None, session_ids=None):
+        """Return the fiscal report payload for the provided filters."""
+        start_dt, end_dt = self._prepare_period_bounds(start_dt, end_dt)
+        record_domain = self._build_record_domain(start_dt, end_dt, config_ids, session_ids)
+        fiscal_records = self.search(record_domain)
+        orders = fiscal_records.mapped("order_id")
+        lines = self.env["pos.order.line"].search([("order_id", "in", orders.ids)]) if orders else self.env["pos.order.line"]
+        payments = self.env["pos.payment"].search([("pos_order_id", "in", orders.ids)]) if orders else self.env["pos.payment"]
+
+        invoice_counts = self._get_invoice_counts(fiscal_records)
+        invoice_totals = self._get_invoice_totals(fiscal_records)
+        sold_items = self._get_sold_items(lines)
+        payment_totals = self._get_payment_totals(payments)
+
+        return {
+            "period": self._prepare_period_summary(start_dt, end_dt),
+            "invoice_counts": invoice_counts,
+            "sold_items": sold_items,
+            "invoice_totals": invoice_totals,
+            "payment_totals": payment_totals,
+        }
+    
+    def _build_record_domain(self, start_dt, end_dt, config_ids=None, session_ids=None):
+        domain = [
+            ("received_at", ">=", start_dt),
+            ("received_at", "<=", end_dt),
+        ]
+        if config_ids:
+            domain.append(("order_id.config_id", "in", config_ids))
+        if session_ids:
+            domain.append(("order_id.session_id", "in", session_ids))
+        return domain
+    
+    def _prepare_period_bounds(self, start_dt, end_dt):
+        if not start_dt or not end_dt:
+            raise UserError("Fiscal reports require both a start and end datetime.")
+        start_dt = fields.Datetime.to_datetime(start_dt)
+        end_dt = fields.Datetime.to_datetime(end_dt)
+        if end_dt < start_dt:
+            raise UserError("The report end datetime must be greater than the start datetime.")
+        return start_dt, end_dt
+    
+    def _prepare_period_summary(self, start_dt, end_dt):
+        user = self.env.user
+        start_local = fields.Datetime.context_timestamp(user, start_dt) if start_dt else False
+        end_local = fields.Datetime.context_timestamp(user, end_dt) if end_dt else False
+        return {
+            "start_utc": start_dt,
+            "end_utc": end_dt,
+            "start": start_local.isoformat() if start_local else False,
+            "end": end_local.isoformat() if end_local else False,
+        }
+    
+    def _get_invoice_counts(self, fiscal_records):
+        categories = {
+            "normal_sale": 0,
+            "normal_refund": 0,
+            "advance_sale": 0,
+            "advance_refund": 0,
+        }
+        for record in fiscal_records:
+            key = self._classify_invoice_type(record)
+            categories[key] += 1
+        return categories
+
+    def _get_invoice_totals(self, fiscal_records):
+        totals = {
+            "sale": 0.0,
+            "refund": 0.0,
+            "per_type": {
+                "normal_sale": 0.0,
+                "normal_refund": 0.0,
+                "advance_sale": 0.0,
+                "advance_refund": 0.0,
+            },
+        }
+        for record in fiscal_records:
+            classification = self._classify_invoice_type(record)
+            amount = record.order_id.amount_total
+            if classification in totals["per_type"]:
+                totals["per_type"][classification] += amount
+            if classification.endswith("sale"):
+                totals["sale"] += amount
+            else:
+                totals["refund"] += abs(amount)
+        return totals
+    
+    def _get_sold_items(self, order_lines):
+        items = []
+        for line in order_lines:
+            taxes = line.tax_ids_after_fiscal_position or line.product_id.taxes_id
+            tax_rate = sum(t.amount for t in taxes) if taxes else 0.0
+            tax_amount = line.price_subtotal_incl - line.price_subtotal
+            items.append({
+                "order_id": line.order_id.id,
+                "order_name": line.order_id.name,
+                "product_id": line.product_id.id,
+                "product_name": line.full_product_name or line.product_id.display_name,
+                "qty": line.qty,
+                "price_unit": line.price_unit,
+                "tax_rate": tax_rate,
+                "tax_amount": tax_amount,
+                "total": line.price_subtotal_incl,
+            })
+        return items
+    
+    def _get_payment_totals(self, payments):
+        categories = [
+            "cash",
+            "card",
+            "mobile_money",
+        ]
+        totals = {category: 0.0 for category in categories}
+        for payment in payments:
+            category = self._map_payment_category(payment.payment_method_id)
+            totals[category] += payment.amount
+        return totals
+    
+    def _map_payment_category(self, method):
+        if not method:
+            return "cash"
+        name = (method.name or "").lower()
+        journal = method.journal_id
+        if method.type == "cash" or (journal and journal.type == "cash"):
+            return "cash"
+        if "card" in name or "visa" in name or "master" in name:
+            return "card"
+        if "mobile" in name or "mpesa" in name:
+            return "mobile_money"
+        return "cash"
+    
+    def _classify_invoice_type(self, fiscal_record):
+        label = (fiscal_record.invoice_label or "").strip().upper()
+        order = fiscal_record.order_id
+        base = "normal"
+        if label in {"AS", "AR", "ADVANCE SALE", "ADVANCE REFUND", "ADVANCE"}:
+            base = "advance"
+        elif label in {"NS", "NF", "NORMAL SALE", "NORMAL REFUND"}:
+            base = "normal"
+        elif "ADVANCE" in label:
+            base = "advance"
+        is_refund = bool(order and order.amount_total < 0)
+        suffix = "refund" if is_refund else "sale"
+        key = f"{base}_{suffix}"
+        if key not in {"normal_sale", "normal_refund", "advance_sale", "advance_refund"}:
+            key = "normal_refund" if is_refund else "normal_sale"
+        return key
+
+    @api.model
+    def get_tax_label(self, product_id):
+        product = self.env["product.product"].browse(product_id)
+        if not product:
+            return False
+        taxes = product.taxes_id
+        rate = round(sum(t.amount for t in taxes), 2) if taxes else 0.0
+        mapping = {
+            12.5: "G",
+            9.0: "A",
+            0.0: "B",
+        }
+        return mapping.get(rate, "UNKNOWN")
     
 
 

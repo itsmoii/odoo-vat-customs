@@ -483,13 +483,13 @@ class ProductTemplate(models.Model):
         if pos_available:
             cr.execute(
                 """
-                SELECT pt.name, COALESCE(SUM(pol.qty), 0) AS qty_sold
+                SELECT pt.id AS product_tmpl_id, COALESCE(SUM(pol.qty), 0) AS qty_sold
                 FROM pos_order_line pol
                 JOIN pos_order po ON pol.order_id = po.id
                 JOIN product_product pp ON pol.product_id = pp.id
                 JOIN product_template pt ON pp.product_tmpl_id = pt.id
                 WHERE po.state IN ('paid','done','invoiced')
-                GROUP BY pt.name
+                GROUP BY pt.id
                 ORDER BY qty_sold DESC
                 LIMIT 10
                 """
@@ -506,19 +506,37 @@ class ProductTemplate(models.Model):
             if sale_available:
                 cr.execute(
                     """
-                    SELECT pt.name, COALESCE(SUM(sol.product_uom_qty), 0) AS qty_sold
+                    SELECT pt.id AS product_tmpl_id, COALESCE(SUM(sol.product_uom_qty), 0) AS qty_sold
                     FROM sale_order_line sol
                     JOIN sale_order so ON sol.order_id = so.id
                     JOIN product_product pp ON sol.product_id = pp.id
                     JOIN product_template pt ON pp.product_tmpl_id = pt.id
                     WHERE so.state IN ('sale','done')
-                    GROUP BY pt.name
+                    GROUP BY pt.id
                     ORDER BY qty_sold DESC
                     LIMIT 10
                     """
                 )
                 rows = cr.dictfetchall()
-        return rows
+
+        if not rows:
+            return []
+
+        tmpl_ids = [row.get("product_tmpl_id") for row in rows if row.get("product_tmpl_id")]
+        names = {}
+        if tmpl_ids:
+            templates = self.browse(tmpl_ids)
+            names = {rec.id: rec.display_name for rec in templates}
+
+        result = []
+        for row in rows:
+            tmpl_id = row.get("product_tmpl_id")
+            name = names.get(tmpl_id)
+            result.append({
+                "name": name or _("Unknown Product"),
+                "qty_sold": float(row.get("qty_sold") or 0),
+            })
+        return result
 
     @api.model
     def get_expiring_products(self, days=30, limit=20):

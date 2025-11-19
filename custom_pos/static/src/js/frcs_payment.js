@@ -184,39 +184,45 @@ patch(PaymentScreen.prototype, {
             sdc_invoice ="";
         }
 
-        const items = order.get_orderlines().map((line) => {
-            const label = line.get_product()?.raw?.frcs_tax_label;
-            const labels = label ? [label] : DEFAULT_LABEL.slice();
+        const items = await Promise.all(
+            order.get_orderlines().map(async (line) => {
+                const taxLabel = await this.pos.data.call(
+                    "pos.order.fiscal.record",
+                    "get_tax_label",
+                    [line.get_product()?.id]
+                );
 
-            
-            let quantity = line.get_quantity()
-            
-            const discount = line.get_discount();
-            console.log("DISCOUNTTTTT:" + discount);
-            
+                const labels = taxLabel ? [taxLabel] : DEFAULT_LABEL.slice();
+                console.log("TAXXXXXX LABELLSLS" + labels)
+                let quantity = line.get_quantity();
+                const discount = line.get_discount();
 
+                if (transaction_type === transactionType[1]) {
+                    quantity = Math.abs(quantity);
+                }
 
-            if (transaction_type == transactionType[1]){
-                quantity = Math.abs(line.get_quantity());
-            }
+                return {
+                    GTIN: line.product?.barcode || null,
+                    Name: line.get_full_product_name() || "Item",
+                    Quantity: quantity,
+                    Discount: discount,
+                    Labels: labels,
+                    unitPrice: line.get_price_with_tax(),
+                    TotalAmount: Math.abs(line.get_price_with_tax()),
+                };
+            })
+        );
 
-            return {
-                
-                GTIN: line.product?.barcode || null,
-                Name: line.get_full_product_name() || "Item",
-                Quantity: quantity,
-                Discount: discount,
-                Labels: labels,
-                unitPrice: line.get_price_with_tax(),
-                TotalAmount: Math.abs(line.get_price_with_tax()),
-            };
-        });
 
         const paymentTypes = order.payment_ids.map((line)=> {
-            let type = line.payment_method_id.type;
-            if(type == "cash"){
-                type ="Cash";
-            }else if (type == "bank"){
+            const method = line.payment_method_id;
+            const methodName = (method.name || "").toLowerCase();
+            let type = "Card";
+            if (method.type === "cash" || methodName.includes("cash")) {
+                type = "Cash";
+            } else if (methodName.includes("mobile")) {
+                type = "MobileMoney";
+            } else {
                 type = "Card";
             }
 
@@ -311,6 +317,8 @@ patch(PaymentScreen.prototype, {
         return result;
     },
 });
+
+
 
 patch(PosOrder.prototype, {
     //Display TaxCore response on POS receipt
