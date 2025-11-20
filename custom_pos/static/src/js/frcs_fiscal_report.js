@@ -54,12 +54,35 @@ class FiscalReportClientAction extends Component {
         this.state.filters[field] = values;
     }
 
+    clearSelection(field) {
+        if (!Object.prototype.hasOwnProperty.call(this.state.filters, field)) {
+            return;
+        }
+        this.state.filters[field] = [];
+    }
+
     async generateReport(ev) {
         ev.preventDefault();
         const { start, end, configs, sessions } = this.state.filters;
         if (!start || !end) {
             this.notification.add(
                 _t("Please select both start and end dates."),
+                { type: "warning" }
+            );
+            return;
+        }
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        if (isNaN(startDate) || isNaN(endDate)) {
+            this.notification.add(
+                _t("Invalid date(s) selected."),
+                { type: "warning" }
+            );
+            return;
+        }
+        if (startDate > endDate) {
+            this.notification.add(
+                _t("Start date must be before or equal to end date."),
                 { type: "warning" }
             );
             return;
@@ -175,7 +198,10 @@ class FiscalReportClientAction extends Component {
         if (isNaN(date.getTime())) {
             return (value || "").split("T")[0];
         }
-        return date.toISOString().slice(0, 10);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
     }
 
     toBoundaryIso(dateString, boundary) {
@@ -187,7 +213,11 @@ class FiscalReportClientAction extends Component {
             return null;
         }
         const suffix = boundary === "end" ? "23:59:59" : "00:00:00";
-        return `${normalized} ${suffix}`;
+        const date = new Date(`${normalized}T${suffix}`);
+        if (isNaN(date.getTime())) {
+            return null;
+        }
+        return date.toISOString().slice(0, 19).replace("T", " ");
     }
 
     prepareInvoiceSummary(report) {

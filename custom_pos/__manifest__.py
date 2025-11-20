@@ -7,13 +7,13 @@
     'data': [
         "security/ir.model.access.csv",
         "views/frcs_reports.xml",
+        "views/frcs_vsdc_config_views.xml",
         "views/pos_config_views.xml",
         "data/ir_cron.xml",
     ],
     'assets': {
         'point_of_sale.assets_prod': [
             "custom_pos/static/src/css/pos_ui.css",
-            "custom_pos/static/src/js/frcs_service.js",
             "custom_pos/static/src/js/frcs_payment.js",
             "custom_pos/static/src/js/frcs_refund.js",
             "custom_pos/static/src/js/frcs_ticketscreen.js",
@@ -27,7 +27,6 @@
             
         ],
         'point_of_sale.assets': [
-            "custom_pos/static/src/js/frcs_service.js",
             "custom_pos/static/src/js/frcs_payment.js",
             "custom_pos/static/src/js/frcs_refund.js",
             "custom_pos/static/src/js/frcs_ticketscreen.js",

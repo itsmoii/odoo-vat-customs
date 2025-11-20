@@ -2,7 +2,6 @@
 import { patch } from "@web/core/utils/patch";
 import { PaymentScreen } from "@point_of_sale/app/screens/payment_screen/payment_screen";
 import { PosOrder } from "@point_of_sale/app/models/pos_order";
-import { sendToTaxcore } from "./frcs_service";
 import { _t } from "@web/core/l10n/translation";
 
 
@@ -11,6 +10,30 @@ const DEFAULT_LABEL = ["G"];
 
 // Sending data to TaxCore
 patch(PaymentScreen.prototype, {
+
+    async addNewPaymentLine(paymentMethod) {
+        if (!paymentMethod) {
+            return super.addNewPaymentLine(...arguments);
+        }
+
+        const methodName = (paymentMethod.name || "").toLowerCase();
+        if (methodName === "proforma" && !this.pos.proformaMode) {
+            this.notification.add(
+                _t("Enable Proforma mode before using the Proforma payment method."),
+                { type: "warning" }
+            );
+            return false;
+        }
+        if (methodName === "training" && !this.pos.trainingMode) {
+            this.notification.add(
+                _t("Enable Training mode before using the Training payment method."),
+                { type: "warning" }
+            );
+            return false;
+        }
+
+        return await super.addNewPaymentLine(...arguments);
+    },
 
     async onMounted(){
         await super.onMounted?.();
@@ -107,6 +130,10 @@ patch(PaymentScreen.prototype, {
             this.currentOrder.setIsTraining(true);
         }
 
+        if (this.pos.advanceMode){
+            this.currentOrder.setIsAdvance(true);
+        }
+
         return await super.validateOrder(isForce);
     },
     
@@ -133,36 +160,58 @@ patch(PaymentScreen.prototype, {
             return result;
         }
 
-            const originalOrder =
-            this.currentOrder
-                .get_orderlines()
-                .map((line) => line.refunded_orderline_id?.order_id)
-                .find(Boolean);
+        const originalOrder =
+        this.currentOrder
+            .get_orderlines()
+            .map((line) => line.refunded_orderline_id?.order_id)
+            .find(Boolean);
 
-            const refundId =
-            originalOrder && typeof originalOrder.id === "number"
-                ? originalOrder.id
-                : null;
+        const refundId =
+        originalOrder && typeof originalOrder.id === "number"
+            ? originalOrder.id
+            : null;
 
-            console.log("REFUNDDDD ORDER IDDDD" + refundId);
+        console.log("REFUNDDDD ORDER IDDDD" + refundId);
 
-            const sdcInvoice = await this.pos.data.call (
+        const sdcInvoice = await this.pos.data.call (
+            "pos.order.fiscal.record",
+            "get_sdc_invoice",
+            [refundId]
+        )
+
+        let refundInvoiceLabel = null;
+        if (refundId) {
+            refundInvoiceLabel = await this.pos.data.call(
                 "pos.order.fiscal.record",
-                "get_sdc_invoice",
+                "get_invoice_label",
                 [refundId]
-            )
+            );
+        }
 
      
 
         const invoiceType = ["Normal", "Refund", "Copy", "Training", "Proforma", "Advance"];
         const transactionType = ["Sale", "Refund"];
+        const resolveInvoiceType = (label) => {
+            const normalized = (label || "").trim().toUpperCase();
+            if (["AS", "AR", "ADVANCE SALE", "ADVANCE REFUND", "ADVANCE"].includes(normalized)) {
+                return invoiceType[5];
+            }
+            if (["PS", "PR", "PROFORMA SALE", "PROFORMA REFUND", "PROFORMA"].includes(normalized)) {
+                return invoiceType[4];
+            }
+            if (["TS", "TR", "TRAINING SALE", "TRAINING REFUND", "TRAINING"].includes(normalized)) {
+                return invoiceType[3];
+            }
+            return invoiceType[0];
+        };
         let transaction_type;
         let invoice_type;
-        let sdc_invoice;
+        let sdc_invoice = "";
 
 
         if (isRefund){
-            invoice_type = invoiceType[0];
+            invoice_type = resolveInvoiceType(refundInvoiceLabel);
             transaction_type = transactionType[1];
             sdc_invoice = sdcInvoice;
 
@@ -237,8 +286,6 @@ patch(PaymentScreen.prototype, {
 
         const invoice_num = "31082017-99";
 
-        const spinnerEl = document.getElementById("taxcore-loading");
-        if(spinnerEl) spinnerEl.classList.remove("d-none");
 
         let invoicePayload;
 
@@ -249,14 +296,12 @@ patch(PaymentScreen.prototype, {
                 Cashier: this.pos.get_cashier().name,
                 BD: null,
                 BuyerCostCenterId: null,
-                IT:invoice_type,
-                TT: transaction_type,
-                paymentType: "Cash",
-                //payment: paymentTypes,
+                invoiceType:invoice_type,
+                transactionType: transaction_type,
+                payment: paymentTypes,
                 InvoiceNumber: invoice_num,
-                ReferentDocumentNumber:sdc_invoice,
-                ReferentDocumentDT: "",
-                PAC: "3AYVNZ",
+                ReferentDocumentNumber: sdc_invoice,
+                ReferentDocumentDT:"",
                 Options: {
                     OmitTextualRepresentation: 0,
                     OmitQRCodeGen: 0,
@@ -268,13 +313,30 @@ patch(PaymentScreen.prototype, {
             console.error("Taxcore validation failed: ", err);
         }
 
-        const taxcoreResponse = await sendToTaxcore({pos: this.pos, payload: invoicePayload });
-        const invoice_label = taxcoreResponse.InvoiceCounterExtension;
+        let taxcoreResponse;
+        try {
+            taxcoreResponse = await this.pos.data.call("taxcore.client", "send_invoice_v3", [invoicePayload]);
+            console.log("TaxCore response", taxcoreResponse);
+        } catch (error) {
+            console.error("TaxCore RPC failed", error);
+            this.notification.add(
+                _t("Failed to sign invoice with TaxCore: %s", error.message || error),
+                { type: "danger" }
+            );
+            return; // abort finalize, do NOT call super
+        }
+        if (!taxcoreResponse || !taxcoreResponse.invoiceNumber) {
+            console.error("TaxCore returned no SDC Invoice Number", taxcoreResponse);
+            this.notification.add(_t("No SDC Invoice returned by TaxCore; order not saved."), { type: "danger" });
+            return;
+        }
+
+        const invoice_label = taxcoreResponse.invoiceCounterExtension;
         const journal = taxcoreResponse;
 
         order.setTaxCoreResponse(taxcoreResponse);
         order.setInvoiceNumber(invoice_num);
-        order.setSDCInvoice(taxcoreResponse.IN);
+        order.setSDCInvoice(taxcoreResponse.invoiceNumber);
         order.setInvoiceLabel(invoice_label);
 
         const result = await super._finalizeValidation(...arguments); 
@@ -314,6 +376,7 @@ patch(PaymentScreen.prototype, {
         
             
         }
+        order.setProcessingLock?.(false);
         return result;
     },
 });
@@ -324,9 +387,9 @@ patch(PosOrder.prototype, {
     //Display TaxCore response on POS receipt
     export_for_printing() {
         const data = super.export_for_printing(...arguments);
-        if (this.taxcore_response && this.taxcore_response.status_code !== 400 && this.taxcore_response.Journal) {
+        if (this.taxcore_response && this.taxcore_response.status_code !== 400 && this.taxcore_response.journal) {
 
-            const journalLines = this.taxcore_response.Journal.split('\r\n');
+            const journalLines = this.taxcore_response.journal.split('\r\n');
             const endLine = journalLines[journalLines.length - 2];
             const beforeEnd = journalLines.slice(0,-2).map((line,i)=>({
                 text:line,
@@ -388,6 +451,9 @@ patch(PosOrder.prototype, {
             data.invoice_label = this.invoice_label;
         }
         data.is_proforma = !!this.is_proforma;
+        data.is_training = !!this.is_training;
+        data.is_advance = !!this.is_advance;
+
 
         return data;
     },

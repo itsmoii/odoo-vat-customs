@@ -60,21 +60,38 @@
                                 t-on-input="(ev) => this.onDateChange('end', ev)"/>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">POS Configurations</label>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label mb-0">POS Configurations</label>
+                                <button type="button"
+                                    t-attf-class="btn btn-link btn-sm text-decoration-none p-0 {{ state.filters.configs.length ? '' : 'invisible' }}"
+                                    t-on-click="() => this.clearSelection('configs')">
+                                    Clear
+                                </button>
+                            </div>
                             <select multiple="multiple" class="form-select"
                                 t-on-change="(ev) => this.onSelectionChange('configs', ev)">
                                 <t t-foreach="state.options.configs" t-as="config" t-key="config.id">
-                                    <option t-att-value="config.id" t-esc="config.name"/>
+                                    <option t-att-value="config.id"
+                                        t-att-selected="state.filters.configs.includes(config.id) ? 'selected' : undefined"
+                                        t-esc="config.name"/>
                                 </t>
                             </select>
                             <small class="text-muted">Leave empty to include all configurations.</small>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">POS Sessions</label>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label mb-0">POS Sessions</label>
+                                <button type="button"
+                                    t-attf-class="btn btn-link btn-sm text-decoration-none p-0 {{ state.filters.sessions.length ? '' : 'invisible' }}"
+                                    t-on-click="() => this.clearSelection('sessions')">
+                                    Clear
+                                </button>
+                            </div>
                             <select multiple="multiple" class="form-select"
                                 t-on-change="(ev) => this.onSelectionChange('sessions', ev)">
                                 <t t-foreach="state.options.sessions" t-as="session" t-key="session.id">
-                                    <option t-att-value="session.id">
+                                    <option t-att-value="session.id"
+                                        t-att-selected="state.filters.sessions.includes(session.id) ? 'selected' : undefined">
                                         <t t-esc="session.name"/>
                                     </option>
                                 </t>
@@ -175,6 +192,8 @@
                         <table class="table table-hover table-sm table-striped mb-0">
                             <thead>
                                 <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
                                     <th>Order</th>
                                     <th>Product</th>
                                     <th class="text-end">Qty</th>
@@ -187,12 +206,14 @@
                             <tbody>
                                 <t t-if="!(state.report.sold_items and state.report.sold_items.length)">
                                     <tr>
-                                        <td colspan="7" class="text-center text-muted">No items sold for this period.</td>
+                                        <td colspan="9" class="text-center text-muted">No items sold for this period.</td>
                                     </tr>
                                 </t>
                                 <t t-else="">
                                     <t t-foreach="this.paginatedSoldItems" t-as="item" t-foreach-index="idx" t-key="item.order_id + '-' + item.product_id + '-' + idx + '-' + state.pagination.page">
                                         <tr>
+                                            <td><t t-esc="item.order_date or ''"/></td>
+                                            <td><t t-esc="item.order_time or ''"/></td>
                                             <td><t t-esc="item.order_name"/></td>
                                             <td><t t-esc="item.product_name"/></td>
                                             <td class="text-end"><t t-esc="item.qty"/></td>

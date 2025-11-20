@@ -66,9 +66,9 @@
                         </t>
                     </t>
 
-                    <t t-if="taxcore.VerificationQRCode">
+                    <t t-if="taxcore.verificationQRCode">
                         <img class="pos-receipt-qrcode mt-3"
-                            t-att-src="'data:image/png;base64,' + taxcore.VerificationQRCode"/>
+                            t-att-src="'data:image/png;base64,' + taxcore.verificationQRCode"/>
                     </t>
 
                     <t t-if="taxcore.journal_end_line">

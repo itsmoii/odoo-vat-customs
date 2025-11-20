@@ -11,6 +11,7 @@ class PosOrder(models.Model):
     taxcore_journal = fields.Text(string="TaxCore Jounal")
     is_proforma = fields.Boolean(default=False)
     is_training = fields.Boolean(default=False)
+    is_advance = fields.Boolean(default=False)
 
 
     def _enqueue_taxcore_print(self):
@@ -46,13 +47,13 @@ class PosOrder(models.Model):
         return res
 
     def _create_order_picking(self):
-        normal = self.filtered(lambda o: not o.is_proforma)
+        normal = self.filtered(lambda o: not o.is_proforma and not o.is_training and not o.is_advance)
         if normal:
             return super(PosOrder, normal)._create_order_picking()
         return True
 
     def _create_account_move(self):
-        normal = self.filtered(lambda o: not o.is_proforma)
+        normal = self.filtered(lambda o: not o.is_proforma and not o.is_training  and not o.is_advance)
         if normal:
             return super(PosOrder, normal)._create_account_move()
         return False
@@ -80,7 +81,13 @@ class PosOrder(models.Model):
                     _logger.warning("Failed to parse taxcore_journal: %s", e)
             _logger.info("Has journal: %s", bool(payload)) 
 
-            res = super(PosOrder, order).action_pos_order_paid()
+            if order.is_proforma or order.is_training:
+                # Those modes intentionally skip payments, so mark them paid manually
+                _logger.info("Skipping paid check for special order %s", order.id)
+                order.write({'state': 'paid'})
+                res = True
+            else:
+                res = super(PosOrder, order).action_pos_order_paid()
             overall_result = overall_result and bool(res)
 
             ip = order.config_id.raw_printer_ip

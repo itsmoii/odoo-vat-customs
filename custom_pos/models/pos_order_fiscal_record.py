@@ -1,5 +1,6 @@
 from odoo import fields, models, api
 from odoo.exceptions import UserError
+import json
 
 class PosOrderFiscalRecord(models.Model):
     _name = "pos.order.fiscal.record"
@@ -35,6 +36,8 @@ class PosOrderFiscalRecord(models.Model):
     def get_sdc_invoice(self, order_id):
         record = self.search([("order_id", "=", order_id)], limit=1)
         return record.sdc_invoice if record else False
+
+    
     
     @api.model
     def get_invoice_label(self, order_id):
@@ -68,6 +71,8 @@ class PosOrderFiscalRecord(models.Model):
         domain = [
             ("received_at", ">=", start_dt),
             ("received_at", "<=", end_dt),
+            ("order_id.is_proforma", "=", False),
+            ("order_id.is_training", "=", False),
         ]
         if config_ids:
             domain.append(("order_id.config_id", "in", config_ids))
@@ -131,15 +136,26 @@ class PosOrderFiscalRecord(models.Model):
     
     def _get_sold_items(self, order_lines):
         items = []
+        user = self.env.user
         for line in order_lines:
             taxes = line.tax_ids_after_fiscal_position or line.product_id.taxes_id
             tax_rate = sum(t.amount for t in taxes) if taxes else 0.0
             tax_amount = line.price_subtotal_incl - line.price_subtotal
+            order_dt = line.order_id.date_order if line.order_id else False
+            order_local = (
+                fields.Datetime.context_timestamp(user, order_dt)
+                if order_dt
+                else False
+            )
+            order_date = order_local.strftime("%Y-%m-%d") if order_local else False
+            order_time = order_local.strftime("%H:%M:%S") if order_local else False
             items.append({
                 "order_id": line.order_id.id,
                 "order_name": line.order_id.name,
                 "product_id": line.product_id.id,
                 "product_name": line.full_product_name or line.product_id.display_name,
+                "order_date": order_date,
+                "order_time": order_time,
                 "qty": line.qty,
                 "price_unit": line.price_unit,
                 "tax_rate": tax_rate,
@@ -227,4 +243,6 @@ class PosOrder(models.Model):
                 "invoice_label": invLabel,
             })
             order_rec.taxcore_journal = payload 
+        if invLabel:
+            order_rec.write({"invoice_label": invLabel})
         return order_id

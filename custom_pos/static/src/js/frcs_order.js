@@ -6,8 +6,9 @@ patch(PosOrder.prototype, {
     setup(vals){
         super.setup(vals);
         this.is_proforma = vals.is_proforma || false;
-        this.is_training = vals.is_proforma || false;
+        this.is_training = vals.is_training || false;
         this.is_advance = vals.is_advance || false; 
+        this.locked_for_processing = vals.locked_for_processing || false;
 
     },
 
@@ -34,4 +35,13 @@ patch(PosOrder.prototype, {
     isAdvance(){
         return !!this.is_advance;
     },
+
+    setProcessingLock(lock){
+        this.locked_for_processing = !!lock;
+    },
+
+    isProcessingLocked(){
+        return !!this.locked_for_processing;
+    },
+
 });
