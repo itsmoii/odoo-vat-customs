@@ -52,8 +52,9 @@ class PosOrder(models.Model):
             return super(PosOrder, normal)._create_order_picking()
         return True
 
+    #Advance sales are supposed to hit the journals
     def _create_account_move(self):
-        normal = self.filtered(lambda o: not o.is_proforma and not o.is_training  and not o.is_advance)
+        normal = self.filtered(lambda o: not o.is_proforma and not o.is_training)
         if normal:
             return super(PosOrder, normal)._create_account_move()
         return False

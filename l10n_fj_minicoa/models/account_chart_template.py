@@ -14,15 +14,16 @@ class AccountChartTemplate(models.AbstractModel):
         if not (fiji and fiji.country_id and fiji.country_id.code == 'FJ'):
             return super()._load(template_code, company, install_demo, force_create)
 
+
+        # Run the base loader (creates the full chart of accounts)
+        res = super()._load(template_code, company, install_demo, force_create)
+
         fjd = self.env['res.currency'].search([('name', '=', 'FJD')], limit=1)
         if fjd and fiji.currency_id != fjd:
             fiji.currency_id = fjd.id
             _logger.info("Set company %s currency to FJD", fiji.name)
 
 
-
-        # Run the base loader (creates the full chart of accounts)
-        res = super()._load(template_code, company, install_demo, force_create)
         self.env.cr.commit()  # ensure accounts are committed before we look for them
 
         Account = self.env['account.account'].with_company(fiji)
@@ -106,6 +107,8 @@ class AccountChartTemplate(models.AbstractModel):
         cash_journal   = _ensure_journal('fj_pos_cash_journal',   'POS Cash',         'cash', 'CSH1', 'fj_70100', '70100')
         card_journal   = _ensure_journal('fj_pos_card_journal',   'POS Card',         'bank', 'CRD1', 'fj_70200', '70200')
         mobile_journal = _ensure_journal('fj_pos_mobile_journal', 'POS Mobile Money', 'bank', 'MBL1', 'fj_70300', '70300')
+        proforma_journal = _ensure_journal('fj_pos_proforma_journal', 'POS Proforma', 'bank', 'PRF1', 'fj_70400', '70400')
+        training_journal = _ensure_journal('fj_pos_training_journal', 'POS Training', 'bank', 'TRN1', 'fj_70500', '70500')
         pos_sales_journal = _ensure_journal('fj_pos_sales_journal', 'Point of Sale', 'general', 'POSS', 'income', '40000')
 
 
@@ -141,6 +144,8 @@ class AccountChartTemplate(models.AbstractModel):
         _ensure_pos_method('POS Cash', cash_journal, cash=True)
         _ensure_pos_method('POS Card', card_journal)
         _ensure_pos_method('POS Mobile Money', mobile_journal)
+        _ensure_pos_method('POS Proforma', proforma_journal)
+        _ensure_pos_method('POS Training', training_journal)
 
 
 

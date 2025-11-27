@@ -4,12 +4,13 @@ import { PaymentScreen } from "@point_of_sale/app/screens/payment_screen/payment
 import { PosOrder } from "@point_of_sale/app/models/pos_order";
 import { _t } from "@web/core/l10n/translation";
 
-
 const DEFAULT_LABEL = ["G"];
 
 
 // Sending data to TaxCore
 patch(PaymentScreen.prototype, {
+
+
 
     async addNewPaymentLine(paymentMethod) {
         if (!paymentMethod) {
@@ -17,14 +18,14 @@ patch(PaymentScreen.prototype, {
         }
 
         const methodName = (paymentMethod.name || "").toLowerCase();
-        if (methodName === "proforma" && !this.pos.proformaMode) {
+        if ((methodName === "proforma" || methodName === "pos proforma") && !this.pos.proformaMode) {
             this.notification.add(
                 _t("Enable Proforma mode before using the Proforma payment method."),
                 { type: "warning" }
             );
             return false;
         }
-        if (methodName === "training" && !this.pos.trainingMode) {
+        if ((methodName === "training" || methodName === "pos training") && !this.pos.trainingMode) {
             this.notification.add(
                 _t("Enable Training mode before using the Training payment method."),
                 { type: "warning" }
@@ -32,12 +33,39 @@ patch(PaymentScreen.prototype, {
             return false;
         }
 
+        if ((methodName === "cash" || methodName === "pos cash" || methodName === "card" || methodName === "pos card"
+            || methodName === "mobile money" || methodName === "pos mobile money") && (this.pos.trainingMode || this.pos.proformaMode)){
+            this.notification.add(
+                _t("This order is in Training/Proforma mode. Use the matching Training or Proforma payment method instead of cash/card/mobile."),
+                { type: "warning" }
+            );
+
+            return false; 
+        }
+
+        this._pruneIncompatiblePayments();
+
         return await super.addNewPaymentLine(...arguments);
     },
 
+    _pruneIncompatiblePayments() {
+        const order = this.currentOrder;
+        if (!order) return;
+        const mode = this.pos.proformaMode ? "proforma" : this.pos.trainingMode ? "training" : null;
+        const lines = order.payment_ids || [];
+        for (const line of lines.slice()) {
+            const name = (line.payment_method_id?.name || line.payment_method?.name || "").toLowerCase();
+            if (mode === "proforma") order.remove_paymentline(line);
+            else if (mode === "training") order.remove_paymentline(line);
+            else if (!mode && (name.includes("proforma") || name.includes("training"))) order.remove_paymentline(line);
+        }
+    },
+
+
+
     async onMounted(){
         await super.onMounted?.();
-
+    
         if (this.pos.proformaMode) {
             await this._ensureProformaLine();
         }
@@ -45,7 +73,7 @@ patch(PaymentScreen.prototype, {
         if (this.pos.trainingMode){
             await this._ensureTrainingLine();
         }
-
+        this._pruneIncompatiblePayments();
     },
 
     async _ensureProformaLine(){
@@ -54,8 +82,11 @@ patch(PaymentScreen.prototype, {
 
         order.setIsProforma?.(true);
 
-        const pm = this.pos.models["pos.payment.method"].find((m) =>
-        m.name === "Proforma");
+        const pm = this.pos.models["pos.payment.method"].find((m) => {
+        const name = (m.name || "").trim().toLowerCase();
+            return name === "proforma" || name === "pos proforma";
+        });
+
 
         if (!pm){
             this.notification.add(
@@ -66,16 +97,17 @@ patch(PaymentScreen.prototype, {
         }
 
         // Remove previous Proforma line
-        for (const line of order.paymentlines || []) {
-            if (line.payment_method?.id === pm.id) {
-                order.remove_paymentline(line);
+        const lines = order.payment_ids || [];
+        for (const line of lines.slice()) {
+            const name = (line.payment_method_id?.name || line.payment_method?.name || "").toLowerCase();
+            if (!name.includes("proforma")) {
+                order.remove_paymentline(line); 
             }
         }
 
         // Add a line that equals current due
         const added = await this.addNewPaymentLine(pm);
         if (added) {
-            const lines = order.paymentlines || [];
             const lastline = lines [lines.length -1];
             if(lastline){
                 lastline.set_amount(order.get_total_with_tax() - order.get_rounding_applied());
@@ -89,8 +121,10 @@ patch(PaymentScreen.prototype, {
 
         order.setIsTraining?.(true);
 
-        const pm = this.pos.models["pos.payment.method"].find((m) =>
-        m.name === "Training");
+        const pm = this.pos.models["pos.payment.method"].find((m) => {
+        const name = (m.name || "").trim().toLowerCase();
+            return name === "training" || name === "pos training";
+        });
 
         if (!pm){
             this.notification.add(
@@ -101,9 +135,11 @@ patch(PaymentScreen.prototype, {
         }
 
         // Remove previous Proforma line
-        for (const line of order.paymentlines || []) {
-            if (line.payment_method?.id === pm.id) {
-                order.remove_paymentline(line);
+        const lines = order.payment_ids || [];
+        for (const line of lines.slice()) {
+            const name = (line.payment_method_id?.name || line.payment_method?.name || "").toLowerCase();
+            if (!name.includes("training")) {
+                order.remove_paymentline(line); 
             }
         }
 
@@ -120,18 +156,20 @@ patch(PaymentScreen.prototype, {
 
 
     async validateOrder(isForce) {
+        const order = this.currentOrder;
+
         if (this.pos.proformaMode) {
             await this._ensureProformaLine();
-            this.currentOrder.setIsProforma(true);
+            order.setIsProforma(true);
         }
 
         if (this.pos.trainingMode) {
             await this._ensureTrainingLine();
-            this.currentOrder.setIsTraining(true);
+            order.setIsTraining(true);
         }
 
         if (this.pos.advanceMode){
-            this.currentOrder.setIsAdvance(true);
+            order.setIsAdvance(true);
         }
 
         return await super.validateOrder(isForce);
@@ -142,6 +180,7 @@ patch(PaymentScreen.prototype, {
         if (!order) {
             return super._finalizeValidation(...arguments);
         }
+
 
         const hasRefundLines = order.getHasRefundLines();
         const isRefund = hasRefundLines;
@@ -188,6 +227,15 @@ patch(PaymentScreen.prototype, {
             );
         }
 
+        if (isRefund){
+            this.pos.proformaMode = false;
+            this.pos.trainingMode = false;
+            this.pos.advanceMode = false;
+            localStorage.setItem("pos_proforma_mode", "false");
+            localStorage.setItem("pos_training_mode", "false");
+            localStorage.setItem("pos_advance_mode", "false");
+        }
+
      
 
         const invoiceType = ["Normal", "Refund", "Copy", "Training", "Proforma", "Advance"];
@@ -205,10 +253,13 @@ patch(PaymentScreen.prototype, {
             }
             return invoiceType[0];
         };
+
+
         let transaction_type;
         let invoice_type;
         let sdc_invoice = "";
-
+        console.log("REFUND", sdcInvoice);
+        console.log("REFUND INVOICE", refundInvoiceLabel);
 
         if (isRefund){
             invoice_type = resolveInvoiceType(refundInvoiceLabel);

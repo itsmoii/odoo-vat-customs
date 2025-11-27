@@ -1,4 +1,5 @@
 from odoo import api, SUPERUSER_ID
+from odoo.exceptions import UserError
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -11,6 +12,15 @@ def pre_init_hook(cr_or_env):
     # Handle both cases: env or cursor (for compatibility)
     cr = getattr(cr_or_env, 'cr', cr_or_env)
     env = api.Environment(cr, SUPERUSER_ID, {})
+
+    has_custom_pos = env["ir.module.module"].search_count([
+        ("name", "=", "custom_pos"),
+        ("state", "in", ["installed", "to install", "to upgrade"]),
+    ])
+    if not has_custom_pos:
+        raise UserError("Install Custom POS first, then install Fiji Mini CoA.")
+
+
     Tax = env['account.tax']
     Company = env['res.company']
 

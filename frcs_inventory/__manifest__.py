@@ -1,10 +1,11 @@
 {
     "name": "FRCS Inventory",
-    "version": "1.0.1",
+    "version": "18.0.1.0.0",
     "summary": "Inventory extensions for FRCS compliance (GTIN, tax label, groundwork)",
-    "author": "USP Team 10",
+    "author": "USP-FRCS IEP Team 2025",
     "license": "LGPL-3",
-    "depends": ["base", "stock", "product", "account", "point_of_sale", "l10n_fj_minicoa"],  # POS + CoA + FRCS
+    "category": "Inventory",
+    "depends": ["base", "stock", "product", "account", "point_of_sale", "l10n_fj_minicoa"],  
     "data": [
         "security/ir.model.access.csv",
         "data/product_categories.xml",           # loads after tax group
@@ -32,9 +33,11 @@
             "frcs_inventory/static/src/js/pos_debug_hook.js",
         ],
     },
+    'post_init_hook': 'post_init_hook',
+    'demo': [],
     "installable": True,
     "application": False,
-
-    'post_init_hook': 'post_init_hook',
+    'license': 'LGPL-3',
+    'images': ['static/description/icon.png'],
 
 }

@@ -10,7 +10,7 @@ class AccountChartTemplate(models.AbstractModel):
         # Minimal template metadata so it appears in Fiscal Localization.
         # Uses generic_coa as parent so default behaviors apply unless overridden.
         return {
-            'name': _('Fiji - MiniCOA'),
+            'name': _('FRCS MiniCoA'),
             'parent': 'generic_coa',
             'country': 'fj',
             'visible': True,

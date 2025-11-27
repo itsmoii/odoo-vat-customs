@@ -1,8 +1,10 @@
 {
-    'name': 'Custom POS',
-    'version': '18.0.1.0.2',
-    'summary': 'Base POS with customization for MSMEs',
-    'description': 'Replaces default Odoo login page with role selection',
+    'name': 'FRCS POS',
+    'version': '18.0.1.0.0',
+    'author': 'USP-FRCS IEP Team 2025',
+    'summary': """Customizes Odoo POS for Fiji MSMEs with FRCS compliance: V-SDC integration, fiscal receipt templates, 
+    enhanced refund and ticket flows, scheduled fiscal reports""",
+    'category': 'Point of Sale',
     'depends': ['point_of_sale'],
     'data': [
         "security/ir.model.access.csv",
@@ -51,6 +53,9 @@
         ],
 
     },
+    'demo': [],
     'installable': True,
-    'application': True
+    'application': True,
+    'license': 'LGPL-3',
+    'images': ['static/description/icon.png'],
 }
